@@ -89,6 +89,45 @@ All models are trained using [BigQuery ML](https://cloud.google.com/bigquery/doc
 
 ---
 
+## HRRP Savings Calculator
+
+Avalon includes a **Hospital Readmissions Reduction Program (HRRP) savings calculator** that quantifies CMS penalty exposure and projects the financial impact of reducing 30-day readmissions.
+
+### What It Does
+
+- Maps SNOMED codes from OMOP data → 6 CMS HRRP condition categories (AMI, HF, Pneumonia, COPD, CABG, THA/TKA)
+- Calculates Excess Readmission Ratios (ERR) per condition
+- Projects penalty amounts based on hospital revenue
+- Generates intervention surfaces showing ROI per prevented readmission
+- Answers: *"How many readmissions must we prevent to eliminate our penalty?"*
+
+### Source Code
+
+The calculator source is available at [`hrrp/savings_calculator.py`](hrrp/savings_calculator.py). For the full specification, see [docs/hrrp_spec.md](docs/hrrp_spec.md).
+
+### Example: Mid-Size Hospital
+
+```
+Hospital:       500-bed community hospital
+Discharges:     12,000/year Medicare FFS
+Base DRG Rev:   $85,000,000/year
+HF Discharges:  800/year
+HF Rate:        23.5% (vs national 21.5%)
+
+Current ERR:        1.093
+Current Penalty:    ~0.8% = $680,000/year
+
+If HF rate drops to 20.0%:
+  New ERR:          0.930
+  New Penalty:      $0
+  Annual Savings:   $680,000
+
+ROI per prevented readmission: $24,286
+Readmissions to prevent:       28/year
+```
+
+---
+
 ## Sample Queries
 
 See the full query library in [docs/sample_queries.md](docs/sample_queries.md). Here are a few examples:
@@ -166,13 +205,17 @@ avalon-public/
 ├── LICENSE                      # Apache 2.0
 ├── CONTRIBUTING.md              # Contribution guidelines
 ├── SECURITY.md                  # Security policy
+├── hrrp/
+│   ├── __init__.py
+│   └── savings_calculator.py    # HRRP penalty calculator (source)
 └── docs/
     ├── omop_view_specs.md       # OMOP CDM 5.4 view field specifications
     ├── sample_queries.md        # SQL query library for OMOP views
-    └── integration.md           # Forge integration guide
+    ├── integration.md           # Forge integration guide
+    └── hrrp_spec.md             # HRRP savings calculator specification
 ```
 
-> **Note:** The Avalon analytics engine, ML model definitions, and deployment infrastructure are maintained in a private repository. This public repo provides documentation, specifications, and sample queries.
+> **Note:** The Avalon analytics engine, ML model definitions, OMOP view SQL implementations, and NL interface are maintained in a private repository. This public repo provides documentation, specifications, sample queries, and the HRRP calculator.
 
 ---
 
