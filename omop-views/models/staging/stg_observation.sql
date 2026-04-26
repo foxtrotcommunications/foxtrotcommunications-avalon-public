@@ -1,9 +1,12 @@
 {{ config(materialized='view') }}
 
 -- Staging: flatten forge-core Observation from child tables only
--- All values from frg__root__raw_1 and descendants
 --
--- Tree: root → raw_1 → code1 → code1__codi1, valu1, subj1, enco1
+-- Tree (depth):
+--   frg__root (2) → observation_raw (3) → observation_code (4) → observation_code_coding (5)
+--                                        → observation_value (4)
+--                                        → observation_subject (4)
+--                                        → observation_encounter (4)
 
 SELECT
   r.ingestion_hash,
@@ -19,9 +22,9 @@ SELECT
 
 FROM {{ source('forge_observation', 'frg__root') }} r
 
-{{ forge_join('raw', 'forge_observation', 'frg__root__raw_1', 'r', 'frg__root') }}
-{{ forge_join('code_cc', 'forge_observation', 'frg__root__raw_1__code1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('code_c', 'forge_observation', 'frg__root__raw_1__code1__codi1', 'code_cc', 'frg__root__raw_1__code1') }}
-{{ forge_join('val', 'forge_observation', 'frg__root__raw_1__valu1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('subj', 'forge_observation', 'frg__root__raw_1__subj1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('enc_ref', 'forge_observation', 'frg__root__raw_1__enco1', 'raw', 'frg__root__raw_1') }}
+{{ forge_join('raw',     'forge_observation', 'observation_raw',          'r',      2) }}
+{{ forge_join('code_cc', 'forge_observation', 'observation_code',         'raw',    3) }}
+{{ forge_join('code_c',  'forge_observation', 'observation_code_coding',  'code_cc', 4) }}
+{{ forge_join('val',     'forge_observation', 'observation_value',        'raw',    3) }}
+{{ forge_join('subj',    'forge_observation', 'observation_subject',      'raw',    3) }}
+{{ forge_join('enc_ref', 'forge_observation', 'observation_encounter',    'raw',    3) }}

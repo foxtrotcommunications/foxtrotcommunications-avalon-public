@@ -1,16 +1,18 @@
 {{ config(materialized='view') }}
 
 -- Staging: flatten forge-core Encounter from child tables only
--- All values from frg__root__raw_1 and descendants
 --
--- Tree: root → raw_1 → clas1, peri1, part1 → part1__indi1, serv1
+-- Tree (depth):
+--   frg__root (2) → encounter_raw (3) → encounter_class (4)
+--                                      → encounter_period (4)
+--                                      → encounter_participant (4) → encounter_part_indiv (5)
+--                                      → encounter_subject (4)
 
 SELECT
   r.ingestion_hash,
   r.ingestion_timestamp,
   raw.id AS resource_id,
   raw.status,
-  -- Patient reference: strip 'urn:uuid:' prefix
   REPLACE(COALESCE(subj.reference, ''), 'urn:uuid:', '') AS patient_id,
   cls.code AS class_code,
   peri.start AS period_start,
@@ -20,9 +22,9 @@ SELECT
 
 FROM {{ source('forge_encounter', 'frg__root') }} r
 
-{{ forge_join('raw', 'forge_encounter', 'frg__root__raw_1', 'r', 'frg__root') }}
-{{ forge_join('cls', 'forge_encounter', 'frg__root__raw_1__clas1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('peri', 'forge_encounter', 'frg__root__raw_1__peri1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('part', 'forge_encounter', 'frg__root__raw_1__part1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('part_ind', 'forge_encounter', 'frg__root__raw_1__part1__indi1', 'part', 'frg__root__raw_1__part1') }}
-{{ forge_join('subj', 'forge_encounter', 'frg__root__raw_1__subj1', 'raw', 'frg__root__raw_1') }}
+{{ forge_join('raw',      'forge_encounter', 'encounter_raw',         'r',    2) }}
+{{ forge_join('cls',      'forge_encounter', 'encounter_class',       'raw',  3) }}
+{{ forge_join('peri',     'forge_encounter', 'encounter_period',      'raw',  3) }}
+{{ forge_join('part',     'forge_encounter', 'encounter_participant', 'raw',  3) }}
+{{ forge_join('part_ind', 'forge_encounter', 'encounter_part_indiv',  'part', 4) }}
+{{ forge_join('subj',     'forge_encounter', 'encounter_subject',     'raw',  3) }}

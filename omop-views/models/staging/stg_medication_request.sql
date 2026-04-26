@@ -1,9 +1,12 @@
 {{ config(materialized='view') }}
 
 -- Staging: flatten forge-core MedicationRequest from child tables only
--- All values from frg__root__raw_1 and descendants
 --
--- Tree: root → raw_1 → medi1 → medi1__codi1, subj1, enco1
+-- Tree (depth):
+--   frg__root (2) → med_request_raw (3) → med_request_med_concept (4)
+--                                          → med_request_med_coding (5)
+--                                        → med_request_subject (4)
+--                                        → med_request_encounter (4)
 
 SELECT
   r.ingestion_hash,
@@ -18,8 +21,8 @@ SELECT
 
 FROM {{ source('forge_medication_request', 'frg__root') }} r
 
-{{ forge_join('raw', 'forge_medication_request', 'frg__root__raw_1', 'r', 'frg__root') }}
-{{ forge_join('med', 'forge_medication_request', 'frg__root__raw_1__medi1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('med_c', 'forge_medication_request', 'frg__root__raw_1__medi1__codi1', 'med', 'frg__root__raw_1__medi1') }}
-{{ forge_join('subj', 'forge_medication_request', 'frg__root__raw_1__subj1', 'raw', 'frg__root__raw_1') }}
-{{ forge_join('enc_ref', 'forge_medication_request', 'frg__root__raw_1__enco1', 'raw', 'frg__root__raw_1') }}
+{{ forge_join('raw',     'forge_medication_request', 'med_request_raw',         'r',   2) }}
+{{ forge_join('med',     'forge_medication_request', 'med_request_med_concept', 'raw', 3) }}
+{{ forge_join('med_c',   'forge_medication_request', 'med_request_med_coding',  'med', 4) }}
+{{ forge_join('subj',    'forge_medication_request', 'med_request_subject',     'raw', 3) }}
+{{ forge_join('enc_ref', 'forge_medication_request', 'med_request_encounter',   'raw', 3) }}
