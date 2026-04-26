@@ -119,3 +119,54 @@ sources:
         identifier: "{{ var('forge_tables')['medication_request']['subject'] }}"
       - name: med_request_encounter
         identifier: "{{ var('forge_tables')['medication_request']['encounter'] }}"
+
+  - name: forge_claim
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_claim_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: claim_raw
+        identifier: "{{ var('forge_tables')['claim']['raw'] }}"
+      - name: claim_billable_period
+        identifier: "{{ var('forge_tables')['claim']['billable_period'] }}"
+      - name: claim_provider
+        identifier: "{{ var('forge_tables')['claim']['provider'] }}"
+      - name: claim_patient
+        identifier: "{{ var('forge_tables')['claim']['patient'] }}"
+      - name: claim_facility
+        identifier: "{{ var('forge_tables')['claim']['facility'] }}"
+      - name: claim_priority
+        identifier: "{{ var('forge_tables')['claim']['priority'] }}"
+      - name: claim_priority_coding
+        identifier: "{{ var('forge_tables')['claim']['priority_coding'] }}"
+      - name: claim_item
+        identifier: "{{ var('forge_tables')['claim']['item'] }}"
+      - name: claim_item_encounter
+        identifier: "{{ var('forge_tables')['claim']['item_encounter'] }}"
+      - name: claim_item_net
+        identifier: "{{ var('forge_tables')['claim']['item_net'] }}"
+      - name: claim_item_product_coding
+        identifier: "{{ var('forge_tables')['claim']['item_product_coding'] }}"
+
+  - name: forge_eob
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_eob_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: eob_raw
+        identifier: "{{ var('forge_tables')['eob']['raw'] }}"
+      - name: eob_patient
+        identifier: "{{ var('forge_tables')['eob']['patient'] }}"
+      - name: eob_insurer
+        identifier: "{{ var('forge_tables')['eob']['insurer'] }}"
+      - name: eob_total
+        identifier: "{{ var('forge_tables')['eob']['total'] }}"
+      - name: eob_total_amount
+        identifier: "{{ var('forge_tables')['eob']['total_amount'] }}"
+      - name: eob_payment
+        identifier: "{{ var('forge_tables')['eob']['payment'] }}"
+      - name: eob_payment_amount
+        identifier: "{{ var('forge_tables')['eob']['payment_amount'] }}"
+

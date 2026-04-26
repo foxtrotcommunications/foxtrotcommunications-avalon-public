@@ -184,6 +184,40 @@ models:
         tests:
           - not_null
 
+  - name: omop_cost
+    description: "OMOP CDM 5.4 COST — claim item-level costs joined with EOB payments"
+    columns:
+      - name: cost_id
+        tests:
+          - unique
+          - not_null
+      - name: cost_event_id
+        tests:
+          - not_null
+      - name: total_charge
+        tests:
+          - not_null
+
+  - name: omop_payer_plan_period
+    description: "OMOP CDM 5.4 PAYER_PLAN_PERIOD — coverage periods per patient+insurer"
+    columns:
+      - name: payer_plan_period_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: payer_plan_period_start_date
+        tests:
+          - not_null
+      - name: payer_plan_period_end_date
+        tests:
+          - not_null
+
   # ═══════════════════════════════════════════════════════════
   # STAGING MODELS — Contract tests
   # ═══════════════════════════════════════════════════════════

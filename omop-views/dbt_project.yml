@@ -71,6 +71,26 @@ vars:
       med_coding:  "frg__root__raw_1__medi1__codi1"
       subject:     "frg__root__raw_1__subj1"
       encounter:   "frg__root__raw_1__enco1"
+    claim:
+      raw:              "frg__root__raw_1"
+      billable_period:  "frg__root__raw_1__bill1"
+      provider:         "frg__root__raw_1__prov1"
+      patient:          "frg__root__raw_1__pati1"
+      facility:         "frg__root__raw_1__faci1"
+      priority:         "frg__root__raw_1__prio1"
+      priority_coding:  "frg__root__raw_1__prio1__codi1"
+      item:             "frg__root__raw_1__item1"
+      item_encounter:   "frg__root__raw_1__item1__enco1"
+      item_net:         "frg__root__raw_1__item1__net_1"
+      item_product_coding: "frg__root__raw_1__item1__prod1__codi1"
+    eob:
+      raw:              "frg__root__raw_1"
+      patient:          "frg__root__raw_1__pati1"
+      insurer:          "frg__root__raw_1__insu1"
+      total:            "frg__root__raw_1__tota1"
+      total_amount:     "frg__root__raw_1__tota1__amou1"
+      payment:          "frg__root__raw_1__paym1"
+      payment_amount:   "frg__root__raw_1__paym1__amou1"
 
 models:
   avalon_omop:
