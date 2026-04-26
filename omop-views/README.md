@@ -1,62 +1,76 @@
-# OMOP CDM 5.4 Views
+# Avalon OMOP — dbt Package
 
-Production-ready OMOP CDM 5.4 views built on [forge-core](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) normalized tables.
+OMOP CDM 5.4 models built directly on [forge-core](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) normalized tables.
+
+## Architecture
+
+```
+forge-core (dbt)              this package (dbt)
+─────────────────             ──────────────────
+FHIR JSON                     staging/
+  → frg__root                   stg_patient.sql ──→ omop_person
+  → frg__root__raw_1            stg_encounter.sql ─→ omop_visit_occurrence
+  → frg__root__raw_1__clas1     stg_condition.sql ─→ omop_condition_occurrence
+  → frg__root__raw_1__peri1     stg_procedure.sql ─→ omop_procedure_occurrence
+  → ...                         stg_observation.sql → omop_measurement
+                                                      omop_observation
+                                stg_medication_request.sql → omop_drug_exposure
+```
+
+Staging models are **views** that join forge-core's sub-tables (the `frg__` tables) into flat, queryable shapes. OMOP models are **materialized tables** that map those shapes to the OMOP CDM 5.4 schema.
 
 ## Prerequisites
 
-- A BigQuery or PostgreSQL dataset containing forge-core normalized tables (`patient`, `encounter`, `condition`, `procedure`, `observation`, `medication_request`, `claim`, `explanation_of_benefit`)
-- See [`forge-table-contract/`](../forge-table-contract/) for the exact schema requirements
+- [forge-core](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) must have processed your FHIR data
+- dbt 1.7+ with BigQuery adapter (`dbt-bigquery`)
+- The forge normalized datasets must exist (e.g., `fhir_normalized_patient`, `fhir_normalized_encounter`, etc.)
 
-## Views
-
-| View | FHIR Source | OMOP Table |
-|------|------------|------------|
-| `omop_person` | Patient | [PERSON](https://ohdsi.github.io/CommonDataModel/cdm54.html#PERSON) |
-| `omop_observation_period` | Encounter (agg) | [OBSERVATION_PERIOD](https://ohdsi.github.io/CommonDataModel/cdm54.html#OBSERVATION_PERIOD) |
-| `omop_provider` | Encounter.participant | [PROVIDER](https://ohdsi.github.io/CommonDataModel/cdm54.html#PROVIDER) |
-| `omop_visit_occurrence` | Encounter | [VISIT_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#VISIT_OCCURRENCE) |
-| `omop_condition_occurrence` | Condition | [CONDITION_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#CONDITION_OCCURRENCE) |
-| `omop_procedure_occurrence` | Procedure | [PROCEDURE_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#PROCEDURE_OCCURRENCE) |
-| `omop_drug_exposure` | MedicationRequest | [DRUG_EXPOSURE](https://ohdsi.github.io/CommonDataModel/cdm54.html#DRUG_EXPOSURE) |
-| `omop_measurement` | Observation (numeric) | [MEASUREMENT](https://ohdsi.github.io/CommonDataModel/cdm54.html#MEASUREMENT) |
-| `omop_observation` | Observation (non-numeric) | [OBSERVATION](https://ohdsi.github.io/CommonDataModel/cdm54.html#OBSERVATION) |
-| `omop_death` | Patient (deceased) | [DEATH](https://ohdsi.github.io/CommonDataModel/cdm54.html#DEATH) |
-| `omop_cost` | Claim + EOB | [COST](https://ohdsi.github.io/CommonDataModel/cdm54.html#COST) |
-| `omop_payer_plan_period` | ExplanationOfBenefit | [PAYER_PLAN_PERIOD](https://ohdsi.github.io/CommonDataModel/cdm54.html#PAYER_PLAN_PERIOD) |
-
-## Usage
-
-### BigQuery
-
-Replace `{project}` and `{dataset}` with your values, then execute each `.sql` file:
+## Quick Start
 
 ```bash
-export PROJECT=my-gcp-project
-export DATASET=forge_fhir
+# Clone
+git clone https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public.git
+cd foxtrotcommunications-avalon-public/omop-views
 
-for f in bigquery/*.sql; do
-  sed "s/{project}/$PROJECT/g; s/{dataset}/$DATASET/g" "$f" | bq query --use_legacy_sql=false
-done
+# Configure your forge project
+export FORGE_PROJECT=your-gcp-project
+
+# Run
+dbt run --profile forge --target your_target
 ```
 
-### PostgreSQL
+## Configuration
 
-```bash
-export DATASET=forge_fhir
+Override these variables in your `dbt_project.yml`:
 
-for f in postgres/*.sql; do
-  sed "s/{dataset}/$DATASET/g" "$f" | psql -d your_database
-done
+```yaml
+vars:
+  forge_project: "your-gcp-project"
+  forge_patient_dataset: "fhir_normalized_patient"
+  forge_encounter_dataset: "fhir_normalized_encounter"
+  # ... etc
 ```
 
-## ID Generation
+## Models
 
-All views use deterministic ID generation from FHIR resource IDs:
-- **BigQuery**: `ABS(FARM_FINGERPRINT(resource_id))`
-- **PostgreSQL**: `ABS(('x' || md5(resource_id))::bit(64)::bigint)`
+| Model | OMOP Table | Source Staging | forge-core Tables |
+|-------|------------|---------------|-------------------|
+| `omop_person` | PERSON | `stg_patient` | `frg__root`, `frg__root__raw_1`, extension sub-tables |
+| `omop_visit_occurrence` | VISIT_OCCURRENCE | `stg_encounter` | `frg__root`, class/period/participant sub-tables |
+| `omop_observation_period` | OBSERVATION_PERIOD | `stg_encounter` | (aggregated from encounters) |
+| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `stg_condition` | `frg__root`, `frg__root__raw_1` |
+| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `stg_procedure` | `frg__root`, `frg__root__raw_1`, perf sub-table |
+| `omop_drug_exposure` | DRUG_EXPOSURE | `stg_medication_request` | `frg__root`, medication coding sub-tables |
+| `omop_measurement` | MEASUREMENT | `stg_observation` | `frg__root` (numeric only) |
+| `omop_observation` | OBSERVATION | `stg_observation` | `frg__root` (non-numeric only) |
+| `omop_death` | DEATH | `stg_patient` + `stg_condition` | patient deceased + same-day conditions |
 
-This ensures referential integrity across all OMOP tables without requiring a central ID registry.
+## The `forge_join` Macro
 
-## Vocabulary Support
+All staging models use the `forge_join` macro to join forge-core sub-tables:
 
-Views support optional OMOP vocabulary mapping via LEFT JOINs against the Athena concept table. When a vocabulary dataset is not available, all `*_concept_id` fields default to `0` and source codes are preserved in `*_source_value` fields.
+```sql
+{{ forge_join('raw', 'forge_patient', 'frg__root__raw_1', 'r', 'frg__root') }}
+```
+
+This generates the positional `idx` segment matching that forge-core uses to link parent → child tables. See `macros/forge_join.sql` for details.

@@ -1,0 +1,75 @@
+version: 2
+
+sources:
+  - name: forge_patient
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_patient_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+      - name: frg__root__raw_1__name1
+      - name: frg__root__raw_1__addr1
+      - name: frg__root__raw_1__exte1
+      - name: frg__root__raw_1__exte1__exte1
+      - name: frg__root__raw_1__exte1__exte1__valu1
+      - name: frg__root__raw_1__mari1
+      - name: frg__root__raw_1__mari1__codi1
+
+  - name: forge_encounter
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_encounter_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+      - name: frg__root__raw_1__clas1
+      - name: frg__root__raw_1__peri1
+      - name: frg__root__raw_1__part1
+      - name: frg__root__raw_1__part1__indi1
+      - name: frg__root__raw_1__serv1
+
+  - name: forge_condition
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_condition_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+
+  - name: forge_procedure
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_procedure_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+      - name: frg__root__raw_1__perf1
+
+  - name: forge_observation
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_observation_dataset') }}"
+    tables:
+      - name: frg__root
+
+  - name: forge_medication_request
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_medication_request_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+      - name: frg__root__raw_1__medi1
+      - name: frg__root__raw_1__medi1__codi1
+
+  - name: forge_claim
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_claim_dataset') }}"
+    tables:
+      - name: frg__root
+      - name: frg__root__raw_1
+      - name: frg__root__raw_1__item1
+      - name: frg__root__raw_1__item1__net1
+      - name: frg__root__raw_1__item1__prod1__codi1
+      - name: frg__root__raw_1__item1__enco1
+
+  - name: forge_eob
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_eob_dataset') }}"
+    tables:
+      - name: frg__root

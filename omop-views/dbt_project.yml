@@ -1,0 +1,36 @@
+name: 'avalon_omop'
+version: '1.0.0'
+config-version: 2
+
+profile: 'forge'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  # Override these in your profiles.yml or dbt_project.yml
+  forge_project: "{{ env_var('FORGE_PROJECT', 'foxtrot-communications-public') }}"
+  # Per-resource normalized datasets produced by forge-core
+  forge_patient_dataset: "fhir_normalized_patient"
+  forge_encounter_dataset: "fhir_normalized_encounter"
+  forge_condition_dataset: "fhir_normalized_condition"
+  forge_procedure_dataset: "fhir_normalized_procedure"
+  forge_observation_dataset: "fhir_normalized_observation"
+  forge_medication_request_dataset: "fhir_normalized_medicationrequest"
+  forge_immunization_dataset: "fhir_normalized_immunization"
+  forge_claim_dataset: "fhir_normalized_claim"
+  forge_eob_dataset: "fhir_normalized_explanationofbenefit"
+
+models:
+  avalon_omop:
+    +materialized: table
+    +schema: omop
+    staging:
+      +materialized: view
