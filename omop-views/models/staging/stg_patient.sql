@@ -1,15 +1,16 @@
 {{ config(materialized='view') }}
 
--- Staging: flatten forge-core Patient sub-tables into a single view
--- Sources: frg__root → frg__root__raw_1 → name1, addr1, exte1, mari1
+-- Staging: flatten forge-core Patient from child tables only
+-- frg__root is used ONLY for ingestion_hash/timestamp (join key)
+-- All values come from frg__root__raw_1 and descendants
+--
+-- Tree: root → raw_1 → name1, addr1, exte1 → exte1__exte1 → valu1
 
 SELECT
   r.ingestion_hash,
   r.ingestion_timestamp,
-  r.resource_id,
-  r.patient_id,
-  r.synthea_run_id,
-  COALESCE(r.cohort_id, 'coh_legacy') AS cohort_id,
+  raw.id AS resource_id,
+  raw.id AS patient_id,
   raw.gender,
   raw.birth_date,
   raw.deceased_date_time,
