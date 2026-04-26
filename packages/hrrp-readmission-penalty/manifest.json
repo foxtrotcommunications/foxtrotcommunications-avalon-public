@@ -1,0 +1,131 @@
+{
+  "id": "hrrp-readmission-penalty",
+  "version": "1.1.0",
+  "name": "CMS HRRP Readmission Penalty Scorecard",
+  "description": "Identifies 30-day inpatient readmissions across all six CMS HRRP condition categories (AMI, Heart Failure, Pneumonia, COPD, CABG, THA/TKA) and simulates the resulting penalty exposure under the Hospital Readmissions Reduction Program. Operates on SNOMED condition + procedure codes — no DRG codes required.",
+  "category": "cost-quality",
+  "tags": ["readmissions", "hrrp", "cms", "penalties", "inpatient", "omop", "cabg", "tha", "tka"],
+  "author": "Foxtrot Communications",
+  "license": "Apache-2.0",
+  "omop_version": "5.4",
+  "required_tables": [
+    "omop_visit_occurrence",
+    "omop_condition_occurrence",
+    "omop_procedure_occurrence",
+    "omop_cost"
+  ],
+  "required_columns": {
+    "omop_visit_occurrence":    ["visit_concept_id", "visit_start_date", "visit_end_date"],
+    "omop_condition_occurrence": ["condition_source_value", "visit_occurrence_id"],
+    "omop_procedure_occurrence": ["procedure_source_value", "visit_occurrence_id"],
+    "omop_cost": ["total_paid", "total_charge", "paid_patient_copay",
+                  "paid_patient_deductible", "paid_patient_coinsurance", "cost_event_id"]
+  },
+  "parameters": [
+    {
+      "id": "lookback_months",
+      "type": "integer",
+      "label": "Lookback period (months)",
+      "description": "How far back to scan for index admissions. 36 months captures more procedure-based conditions (CABG, THA/TKA) which are less frequent.",
+      "default": 36,
+      "min": 6,
+      "max": 60
+    },
+    {
+      "id": "scenario",
+      "type": "enum",
+      "label": "Hospital performance scenario",
+      "description": "baseline = real OMOP data only. high_risk = deterministic synthetic readmission overlay to demonstrate above-benchmark penalty exposure.",
+      "options": ["baseline", "high_risk"],
+      "default": "baseline"
+    },
+    {
+      "id": "ami_target_rate",
+      "type": "float",
+      "label": "AMI target readmission rate",
+      "description": "High-risk scenario: target % of AMI index admissions that readmit. CMS national avg 16.5%.",
+      "default": 0.225,
+      "min": 0.10,
+      "max": 0.40,
+      "visible_when": { "scenario": "high_risk" }
+    },
+    {
+      "id": "hf_target_rate",
+      "type": "float",
+      "label": "HF target readmission rate",
+      "description": "High-risk scenario: target % of Heart Failure index admissions that readmit. CMS national avg 21.5%.",
+      "default": 0.290,
+      "min": 0.10,
+      "max": 0.45,
+      "visible_when": { "scenario": "high_risk" }
+    },
+    {
+      "id": "pn_target_rate",
+      "type": "float",
+      "label": "Pneumonia target readmission rate",
+      "description": "High-risk scenario: target % of Pneumonia index admissions that readmit. CMS national avg 15.0%.",
+      "default": 0.195,
+      "min": 0.10,
+      "max": 0.40,
+      "visible_when": { "scenario": "high_risk" }
+    },
+    {
+      "id": "copd_target_rate",
+      "type": "float",
+      "label": "COPD target readmission rate",
+      "description": "High-risk scenario: target % of COPD index admissions that readmit. CMS national avg 19.8%.",
+      "default": 0.260,
+      "min": 0.10,
+      "max": 0.45,
+      "visible_when": { "scenario": "high_risk" }
+    },
+    {
+      "id": "cabg_target_rate",
+      "type": "float",
+      "label": "CABG target readmission rate",
+      "description": "High-risk scenario: target % of CABG index admissions that readmit. CMS national avg 12.55%.",
+      "default": 0.200,
+      "min": 0.05,
+      "max": 0.40,
+      "visible_when": { "scenario": "high_risk" }
+    },
+    {
+      "id": "tha_tka_target_rate",
+      "type": "float",
+      "label": "THA/TKA target readmission rate",
+      "description": "High-risk scenario: target % of THA/TKA index admissions that readmit. CMS national avg 4.5%.",
+      "default": 0.080,
+      "min": 0.02,
+      "max": 0.25,
+      "visible_when": { "scenario": "high_risk" }
+    }
+  ],
+  "outputs": {
+    "scorecard": {
+      "primary": true,
+      "query": "main.sql",
+      "viz": ["scorecard.vg.json"],
+      "description": "Condition-level HRRP scorecard — all 6 CMS conditions with ERR, penalty exposure, and benchmark comparison."
+    },
+    "trend": {
+      "primary": false,
+      "query": "trend.sql",
+      "viz": [],
+      "description": "Monthly 30-day readmission trend per condition with CMS benchmark and rolling 3-month average."
+    },
+    "patient_detail": {
+      "primary": false,
+      "query": "detail.sql",
+      "viz": ["patient_table.json"],
+      "description": "Patient-level readmission events with index cost, readmit cost, and days to readmit."
+    }
+  },
+  "refresh_policy": {
+    "ttl_days": 7,
+    "suggested_refresh": "weekly"
+  },
+  "references": [
+    "https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program",
+    "https://www.cms.gov/newsroom/fact-sheets/fiscal-year-fy-2024-medicare-hospital-inpatient-prospective-payment-system-ipps-and-long-term-care"
+  ]
+}

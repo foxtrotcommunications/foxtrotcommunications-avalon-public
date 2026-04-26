@@ -1,0 +1,80 @@
+{
+  "version": "1.0.0",
+  "forge_core_min_version": "0.9.0",
+  "description": "Defines the required forge-core output tables that OMOP views and analytics packages depend on.",
+  "column_naming": "Forge flattens nested FHIR JSON using double underscore (__) as the path separator. Example: code.coding[0].code → code__coding__code",
+  "tables": {
+    "patient": {
+      "fhir_resource": "Patient",
+      "required_columns": [
+        {"name": "patient_id", "type": "STRING", "fhir_path": "Patient.id"},
+        {"name": "resource_id", "type": "STRING", "fhir_path": "Patient.id"},
+        {"name": "gender", "type": "STRING", "fhir_path": "Patient.gender"},
+        {"name": "birth_date", "type": "STRING", "fhir_path": "Patient.birthDate"},
+        {"name": "deceased_date_time", "type": "STRING", "fhir_path": "Patient.deceasedDateTime"},
+        {"name": "extension_url", "type": "STRING", "fhir_path": "Patient.extension.url"},
+        {"name": "sub_extension_url", "type": "STRING", "fhir_path": "Patient.extension.extension.url"},
+        {"name": "extension_value_code", "type": "STRING", "fhir_path": "Patient.extension.extension.valueCoding.code"},
+        {"name": "extension_value_display", "type": "STRING", "fhir_path": "Patient.extension.extension.valueCoding.display"},
+        {"name": "ingestion_timestamp", "type": "TIMESTAMP", "fhir_path": "N/A (forge metadata)"}
+      ]
+    },
+    "encounter": {
+      "fhir_resource": "Encounter",
+      "required_columns": [
+        {"name": "resource_id", "type": "STRING", "fhir_path": "Encounter.id"},
+        {"name": "patient_id", "type": "STRING", "fhir_path": "Encounter.subject.reference"},
+        {"name": "class_code", "type": "STRING", "fhir_path": "Encounter.class.code"},
+        {"name": "period_start", "type": "STRING", "fhir_path": "Encounter.period.start"},
+        {"name": "period_end", "type": "STRING", "fhir_path": "Encounter.period.end"},
+        {"name": "participant_individual_reference", "type": "STRING", "fhir_path": "Encounter.participant.individual.reference"},
+        {"name": "ingestion_timestamp", "type": "TIMESTAMP", "fhir_path": "N/A (forge metadata)"}
+      ]
+    },
+    "condition": {
+      "fhir_resource": "Condition",
+      "required_columns": [
+        {"name": "resource_id", "type": "STRING", "fhir_path": "Condition.id"},
+        {"name": "patient_id", "type": "STRING", "fhir_path": "Condition.subject.reference"},
+        {"name": "encounter_id", "type": "STRING", "fhir_path": "Condition.encounter.reference"},
+        {"name": "code", "type": "STRING", "fhir_path": "Condition.code.coding[0].code"},
+        {"name": "code_display", "type": "STRING", "fhir_path": "Condition.code.coding[0].display"},
+        {"name": "effective_date", "type": "STRING", "fhir_path": "Condition.onsetDateTime"},
+        {"name": "clinical_status", "type": "STRING", "fhir_path": "Condition.clinicalStatus"}
+      ]
+    },
+    "procedure": {
+      "fhir_resource": "Procedure",
+      "required_columns": [
+        {"name": "resource_id", "type": "STRING", "fhir_path": "Procedure.id"},
+        {"name": "patient_id", "type": "STRING", "fhir_path": "Procedure.subject.reference"},
+        {"name": "encounter_id", "type": "STRING", "fhir_path": "Procedure.encounter.reference"},
+        {"name": "code", "type": "STRING", "fhir_path": "Procedure.code.coding[0].code"},
+        {"name": "performed_start", "type": "STRING", "fhir_path": "Procedure.performedPeriod.start"},
+        {"name": "performed_end", "type": "STRING", "fhir_path": "Procedure.performedPeriod.end"}
+      ]
+    },
+    "observation": {
+      "fhir_resource": "Observation",
+      "required_columns": [
+        {"name": "resource_id", "type": "STRING", "fhir_path": "Observation.id"},
+        {"name": "patient_id", "type": "STRING", "fhir_path": "Observation.subject.reference"},
+        {"name": "encounter_id", "type": "STRING", "fhir_path": "Observation.encounter.reference"},
+        {"name": "code", "type": "STRING", "fhir_path": "Observation.code.coding[0].code"},
+        {"name": "effective_date", "type": "STRING", "fhir_path": "Observation.effectiveDateTime"},
+        {"name": "value_quantity", "type": "STRING", "fhir_path": "Observation.valueQuantity.value"},
+        {"name": "value_unit", "type": "STRING", "fhir_path": "Observation.valueQuantity.unit"}
+      ]
+    },
+    "medication_request": {
+      "fhir_resource": "MedicationRequest",
+      "required_columns": [
+        {"name": "resource_id", "type": "STRING", "fhir_path": "MedicationRequest.id"},
+        {"name": "patient_id", "type": "STRING", "fhir_path": "MedicationRequest.subject.reference"},
+        {"name": "encounter_id", "type": "STRING", "fhir_path": "MedicationRequest.encounter.reference"},
+        {"name": "med_code", "type": "STRING", "fhir_path": "MedicationRequest.medicationCodeableConcept.coding[0].code"},
+        {"name": "authored_on", "type": "STRING", "fhir_path": "MedicationRequest.authoredOn"}
+      ]
+    }
+  }
+}

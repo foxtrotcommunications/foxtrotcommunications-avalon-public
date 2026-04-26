@@ -1,199 +1,111 @@
-# 🏥 Avalon Analytics
+# 🏥 Avalon Analytics — Open Source
 
-**Healthcare analytics powered by OMOP CDM 5.4 — query clinical data, score patient risk, and build ML models using natural language.**
+**OMOP CDM 5.4 analytics marketplace built on [forge-core](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) normalized FHIR data.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![FHIR](https://img.shields.io/badge/FHIR-R4-orange.svg)](https://hl7.org/fhir/R4/)
 [![OMOP](https://img.shields.io/badge/OMOP-CDM%205.4-green.svg)](https://ohdsi.github.io/CommonDataModel/cdm54.html)
-[![BigQuery](https://img.shields.io/badge/BigQuery-Analytics%20Hub-4285F4.svg)](https://console.cloud.google.com/bigquery/analytics-hub)
+[![CI](https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public/actions/workflows/ci.yml/badge.svg)](https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public/actions)
 
 ---
 
-## What is Avalon?
+## What's in This Repo
 
-Avalon Analytics transforms raw clinical data into actionable insights — without requiring a data science team.
+This is the **open source analytics layer** for the Avalon platform. It contains everything needed to build production-grade OMOP CDM 5.4 tables from forge-core's normalized FHIR output, plus a marketplace of analytics packages that run on those tables.
 
-It provides:
-
-- **9 OMOP CDM 5.4 views** — production-ready, research-grade data model on FHIR-normalized data in BigQuery
-- **5 pre-trained clinical ML models** — readmission prediction, mortality risk, patient segmentation, lab forecasting, drug-condition analysis
-- **HRRP savings calculator** — quantify CMS penalty exposure and ROI from reducing readmissions
-- **Natural language interface** — ask clinical questions in English, get SQL results and trained models (powered by Gemini)
-- **Synthetic data sandbox** — explore everything with realistic Synthea-generated data at zero risk
-
-### Who is it for?
-
-| Role | What Avalon provides |
-|------|---------------------|
-| **CMO / Quality** | Readmission risk scores, mortality benchmarks, population insights |
-| **CFO / Revenue Cycle** | HRRP penalty calculator with dollar-amount savings projections |
-| **Population Health** | Patient segmentation into actionable care management cohorts |
-| **Clinical Research** | OMOP-compliant datasets compatible with OHDSI tools (ATLAS, ACHILLES) |
-| **Pharmacy / P&T** | Drug-condition co-occurrence matrix with lift scores |
+| Component | What It Does | Path |
+|-----------|-------------|------|
+| **OMOP dbt Models** | 9 OMOP CDM 5.4 tables built on forge-core `frg__` tables | [`omop-views/`](omop-views/) |
+| **Analytics Packages** | Plug-and-play analytics (HRRP, etc.) with SQL + viz specs | [`packages/`](packages/) |
+| **Forge Table Contract** | Machine-readable schema defining the forge-core → OMOP interface | [`forge-table-contract/`](forge-table-contract/) |
 
 ---
 
 ## Architecture
 
 ```
-  Your Data                        Your BigQuery Project
-  ─────────                        ────────────────────
-  ┌─────────┐     ┌──────────┐     ┌──────────────────────────────┐
-  │ EHR     │────►│  Forge   │────►│  OMOP Views  │  ML Models   │
-  │ (FHIR)  │     │ Normalize│     │  (9 tables)  │  (5 models)  │
-  └─────────┘     └──────────┘     │              │              │
-                                   │     Ask a question ──► SQL  │
-                                   │     Describe a model ──► ML │
-                                   └──────────────────────────────┘
-                                     All queries run here.
-                                     PHI never leaves your project.
+  FHIR R4 JSON
+       │
+       ▼
+  ┌──────────────────────┐
+  │  forge-core (OSS)    │  JSON → relational decomposition
+  │  github.com/foxtrot  │  Produces frg__root, frg__root__raw_1, etc.
+  │  communications/     │
+  │  forge-core          │
+  └──────────┬───────────┘
+             │ frg__ tables (per-resource datasets)
+             ▼
+  ┌──────────────────────┐
+  │  THIS REPO (OSS)     │  dbt models: staging → OMOP tables
+  │  omop-views/         │  Analytics packages query OMOP tables
+  │  packages/           │
+  └──────────┬───────────┘
+             │ OMOP CDM 5.4 tables
+             ▼
+  ┌──────────────────────┐
+  │  Avalon SaaS         │  NL-to-SQL, ML models, orchestration
+  │  (proprietary)       │  Consumes OMOP tables + analytics packages
+  └──────────────────────┘
 ```
 
-**Key architectural principle:** In production, all analytics run inside *your* BigQuery project. Your clinical data never leaves your GCP environment.
+The key structural advantage: all analytics — open source and commercial — operate on the same **forge-normalized schema**. This means any OMOP view or analytics package written here works with any forge-core deployment, on any warehouse forge-core supports (BigQuery, Snowflake, Databricks, Postgres, Redshift).
 
 ---
 
-## OMOP CDM 5.4 Views
+## Quick Start
 
-Avalon maps FHIR R4 resources to OMOP CDM 5.4 views following the [OHDSI Common Data Model specification](https://ohdsi.github.io/CommonDataModel/cdm54.html).
+### Prerequisites
+- [forge-core](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) has processed your FHIR data
+- dbt 1.7+ with the appropriate adapter (e.g., `dbt-bigquery`)
 
-| View | FHIR Source | Key Fields | OMOP Table |
-|------|------------|------------|------------|
-| `omop_person` | Patient | person_id, gender, birth year, race, ethnicity | [PERSON](https://ohdsi.github.io/CommonDataModel/cdm54.html#PERSON) |
-| `omop_observation_period` | Encounter (agg) | observation_period_start/end_date | [OBSERVATION_PERIOD](https://ohdsi.github.io/CommonDataModel/cdm54.html#OBSERVATION_PERIOD) |
-| `omop_visit_occurrence` | Encounter | visit_type (IP/OP/ED), dates, LOS | [VISIT_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#VISIT_OCCURRENCE) |
-| `omop_condition_occurrence` | Condition | SNOMED codes, onset/resolution dates | [CONDITION_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#CONDITION_OCCURRENCE) |
-| `omop_procedure_occurrence` | Procedure | SNOMED codes, procedure dates | [PROCEDURE_OCCURRENCE](https://ohdsi.github.io/CommonDataModel/cdm54.html#PROCEDURE_OCCURRENCE) |
-| `omop_drug_exposure` | MedicationRequest | RxNorm codes, start/end dates | [DRUG_EXPOSURE](https://ohdsi.github.io/CommonDataModel/cdm54.html#DRUG_EXPOSURE) |
-| `omop_measurement` | Observation (numeric) | LOINC codes, values, units | [MEASUREMENT](https://ohdsi.github.io/CommonDataModel/cdm54.html#MEASUREMENT) |
-| `omop_observation` | Observation (non-numeric) | Clinical findings, assessments | [OBSERVATION](https://ohdsi.github.io/CommonDataModel/cdm54.html#OBSERVATION) |
-| `omop_death` | Patient (deceased) | Death date, cause of death | [DEATH](https://ohdsi.github.io/CommonDataModel/cdm54.html#DEATH) |
+### Build OMOP Tables
 
-**ID generation:** Deterministic IDs via `ABS(FARM_FINGERPRINT(resource_id))` for referential integrity across all views.
+```bash
+git clone https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public.git
+cd foxtrotcommunications-avalon-public/omop-views
 
-For full field specifications, see [docs/omop_view_specs.md](docs/omop_view_specs.md).
+# Set your forge project
+export FORGE_PROJECT=your-gcp-project
+
+# Run all models
+dbt run --profile forge --target your_target
+```
+
+### Explore Analytics
+
+Browse `packages/` for available analytics. Each package has a `manifest.json` describing its inputs, parameters, and outputs. See the [Package Authoring Guide](packages/README.md).
 
 ---
 
-## ML Models
+## OMOP Models
 
-| Model | Type | What It Does |
-|-------|------|-------------|
-| `readmission_predictor` | Logistic Regression | Predicts 30-day hospital readmission risk from demographics, comorbidities, and visit history |
-| `mortality_risk` | Logistic Regression | Scores patient mortality risk using age, condition burden, and utilization patterns |
-| `patient_segments` | K-Means (k=5) | Identifies 5 patient archetypes from utilization, condition burden, and polypharmacy |
-| `lab_trend_forecast` | ARIMA+ (12-month) | Forecasts population-level lab value trends for 10 common lab types |
-| `drug_condition_matrix` | Analytical View | Drug-condition co-occurrence with lift scores for pharmacovigilance |
+| Model | OMOP Table | Forge Source Tables |
+|-------|------------|---------------------|
+| `omop_person` | PERSON | `frg__root__raw_1`, extension sub-tables |
+| `omop_visit_occurrence` | VISIT_OCCURRENCE | `frg__root__raw_1`, class/period/participant |
+| `omop_observation_period` | OBSERVATION_PERIOD | (aggregated from encounters) |
+| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `frg__root__raw_1`, code/subject/encounter |
+| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `frg__root__raw_1`, code/perf/subject |
+| `omop_drug_exposure` | DRUG_EXPOSURE | `frg__root__raw_1`, medication coding |
+| `omop_measurement` | MEASUREMENT | `frg__root__raw_1`, code/value |
+| `omop_observation` | OBSERVATION | `frg__root__raw_1`, code/value |
+| `omop_death` | DEATH | patient deceased + same-day conditions |
 
-All models are trained using [BigQuery ML](https://cloud.google.com/bigquery/docs/bqml-introduction) and run entirely within your BigQuery project.
+All models pull data exclusively from forge-core's child sub-tables (`frg__root__raw_1` and descendants). `frg__root` is used only as the ingestion anchor for deduplication.
 
----
-
-## HRRP Savings Calculator
-
-Avalon includes a **Hospital Readmissions Reduction Program (HRRP) savings calculator** that quantifies CMS penalty exposure and projects the financial impact of reducing 30-day readmissions.
-
-### What It Does
-
-- Maps SNOMED codes from OMOP data → 6 CMS HRRP condition categories (AMI, HF, Pneumonia, COPD, CABG, THA/TKA)
-- Calculates Excess Readmission Ratios (ERR) per condition
-- Projects penalty amounts based on hospital revenue
-- Generates intervention surfaces showing ROI per prevented readmission
-- Answers: *"How many readmissions must we prevent to eliminate our penalty?"*
-
-### Source Code
-
-The calculator source is available at [`hrrp/savings_calculator.py`](hrrp/savings_calculator.py). For the full specification, see [docs/hrrp_spec.md](docs/hrrp_spec.md).
-
-### Example: Mid-Size Hospital
-
-```
-Hospital:       500-bed community hospital
-Discharges:     12,000/year Medicare FFS
-Base DRG Rev:   $85,000,000/year
-HF Discharges:  800/year
-HF Rate:        23.5% (vs national 21.5%)
-
-Current ERR:        1.093
-Current Penalty:    ~0.8% = $680,000/year
-
-If HF rate drops to 20.0%:
-  New ERR:          0.930
-  New Penalty:      $0
-  Annual Savings:   $680,000
-
-ROI per prevented readmission: $24,286
-Readmissions to prevent:       28/year
-```
+For full specifications, see [docs/omop_view_specs.md](docs/omop_view_specs.md).
 
 ---
 
-## Sample Queries
+## Analytics Packages
 
-See the full query library in [docs/sample_queries.md](docs/sample_queries.md). Here are a few examples:
+| Package | Category | Description |
+|---------|----------|-------------|
+| [HRRP Readmission Penalty](packages/hrrp-readmission-penalty/) | Cost & Quality | CMS HRRP penalty exposure scorecard with 30-day readmission tracking |
 
-### Patient Demographics
-```sql
-SELECT
-  gender_source_value,
-  COUNT(*) AS patient_count,
-  AVG(EXTRACT(YEAR FROM CURRENT_DATE()) - year_of_birth) AS avg_age
-FROM omop_person
-GROUP BY gender_source_value;
-```
+### Contributing a Package
 
-### 30-Day Readmission Rate
-```sql
-WITH visits AS (
-  SELECT person_id, visit_start_date, visit_end_date,
-         LEAD(visit_start_date) OVER (
-           PARTITION BY person_id ORDER BY visit_start_date
-         ) AS next_visit_date
-  FROM omop_visit_occurrence
-  WHERE visit_concept_id = 9201  -- inpatient
-)
-SELECT
-  ROUND(COUNT(CASE WHEN DATE_DIFF(next_visit_date, visit_end_date, DAY) <= 30
-                   THEN 1 END) * 100.0 / COUNT(*), 1) AS readmission_rate_pct
-FROM visits;
-```
-
-### Top Conditions by Frequency
-```sql
-SELECT
-  condition_source_value AS snomed_code,
-  COUNT(*) AS occurrence_count,
-  COUNT(DISTINCT person_id) AS unique_patients
-FROM omop_condition_occurrence
-GROUP BY condition_source_value
-ORDER BY occurrence_count DESC
-LIMIT 20;
-```
-
----
-
-## Try It Free
-
-Avalon's synthetic dataset is available on [BigQuery Analytics Hub](https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/foxtrot-communications-public/locations/us/dataExchanges/forge_synthetic_fhir/listings/fhir_r4_synthetic_data):
-
-1. Subscribe to the dataset (free, requires GCP account)
-2. Open BigQuery console
-3. Run any of the sample queries above
-
----
-
-## Integration
-
-Avalon integrates with the [Forge](https://github.com/foxtrotcommunications) data platform for FHIR normalization. For integration details, see [docs/integration.md](docs/integration.md).
-
-### Supported Data Sources
-
-| Source | Format | Status |
-|--------|--------|--------|
-| Synthea (synthetic) | FHIR R4 | ✅ Production |
-| Epic | FHIR R4 (US Core) | 🔜 Planned |
-| Cerner / Oracle Health | FHIR R4 | 🔜 Planned |
-| athenahealth | FHIR R4 + proprietary | 🔜 Planned |
+See the [Package Authoring Guide](packages/README.md) for the manifest format, directory structure, and validation requirements.
 
 ---
 
@@ -201,32 +113,48 @@ Avalon integrates with the [Forge](https://github.com/foxtrotcommunications) dat
 
 ```
 avalon-public/
-├── README.md                    # This file
-├── LICENSE                      # Apache 2.0
-├── CONTRIBUTING.md              # Contribution guidelines
-├── SECURITY.md                  # Security policy
-├── hrrp/
-│   ├── __init__.py
-│   └── savings_calculator.py    # HRRP penalty calculator (source)
-└── docs/
-    ├── omop_view_specs.md       # OMOP CDM 5.4 view field specifications
-    ├── sample_queries.md        # SQL query library for OMOP views
-    ├── integration.md           # Forge integration guide
-    └── hrrp_spec.md             # HRRP savings calculator specification
+├── omop-views/                       # dbt project
+│   ├── dbt_project.yml               # Config with forge dataset vars
+│   ├── macros/forge_join.sql          # Reusable idx segment matching
+│   └── models/
+│       ├── staging/                   # Views joining frg__ sub-tables
+│       │   ├── _sources.yml           # Source definitions
+│       │   ├── stg_patient.sql
+│       │   ├── stg_encounter.sql
+│       │   └── ...
+│       ├── omop_person.sql            # Materialized OMOP tables
+│       ├── omop_visit_occurrence.sql
+│       └── ...
+├── packages/                          # Analytics marketplace
+│   └── hrrp-readmission-penalty/
+│       ├── manifest.json
+│       ├── queries/
+│       └── viz/
+├── forge-table-contract/              # Interface contract
+│   └── contract.json
+├── .github/
+│   ├── workflows/ci.yml              # SQL lint + manifest validation
+│   └── CODEOWNERS
+├── docs/
+├── hrrp/                              # Legacy HRRP calculator
+├── LICENSE                            # Apache 2.0
+├── CONTRIBUTING.md
+└── SECURITY.md
 ```
-
-> **Note:** The Avalon analytics engine, ML model definitions, OMOP view SQL implementations, and NL interface are maintained in a private repository. This public repo provides documentation, specifications, sample queries, and the HRRP calculator.
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We welcome:
+See [CONTRIBUTING.md](CONTRIBUTING.md). We welcome:
 
-- 🐛 Bug reports and feature requests via Issues
+- 🔬 New analytics packages
+- 📐 OMOP view improvements and vocabulary mapping
+- 🧪 dbt tests and data quality checks
 - 📖 Documentation improvements
-- 🔬 Sample query contributions
-- 🗺️ Healthcare terminology mapping suggestions
+- 🗺️ Ports to additional warehouse dialects
+
+All PRs require CI to pass (SQL linting, manifest validation, contract integrity checks) and core team review.
 
 ---
 
@@ -236,4 +164,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. We welcome:
 
 ---
 
-_Avalon Analytics is a [Foxtrot Communications](https://foxtrotcommunications.net) product, powered by [Forge](https://github.com/foxtrotcommunications)._
+_Avalon Analytics is a [Foxtrot Communications](https://foxtrotcommunications.net) product, powered by [Forge](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core)._

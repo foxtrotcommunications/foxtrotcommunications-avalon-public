@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Avalon Analytics Package Manifest",
+  "type": "object",
+  "required": ["id", "version", "name", "description", "category", "author", "license", "omop_version", "required_tables", "outputs"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique package identifier (kebab-case)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable package name"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this package does"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["cost-quality", "population-health", "clinical-ops", "research", "pharmacovigilance"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "author": { "type": "string" },
+    "license": { "type": "string" },
+    "omop_version": {
+      "type": "string",
+      "description": "OMOP CDM version this package targets"
+    },
+    "required_tables": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "OMOP tables this package queries"
+    },
+    "required_columns": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["integer", "float", "string", "enum", "boolean"] },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "default": {},
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "options": { "type": "array", "items": { "type": "string" } },
+          "visible_when": { "type": "object" }
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["query", "description"],
+        "properties": {
+          "primary": { "type": "boolean" },
+          "query": { "type": "string" },
+          "viz": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "refresh_policy": {
+      "type": "object",
+      "properties": {
+        "ttl_days": { "type": "integer" },
+        "suggested_refresh": { "type": "string" }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" }
+    }
+  }
+}

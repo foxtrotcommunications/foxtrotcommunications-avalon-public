@@ -1,0 +1,160 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "HRRP Readmission Penalty Scorecard — condition-level ERR gauge and penalty breakdown",
+  "data": { "name": "scorecard" },
+  "config": {
+    "font": "Inter, system-ui, sans-serif",
+    "background": "#0f1117",
+    "title": { "color": "#f0f0f0", "fontSize": 15, "fontWeight": 600 },
+    "axis": {
+      "labelColor": "#9ca3af",
+      "titleColor": "#9ca3af",
+      "gridColor": "#1f2937",
+      "domainColor": "#374151"
+    },
+    "legend": { "labelColor": "#9ca3af", "titleColor": "#9ca3af" },
+    "view": { "stroke": null }
+  },
+  "vconcat": [
+    {
+      "title": "Excess Readmission Ratio vs. Benchmark (1.0 = national average)",
+      "width": 520,
+      "height": 180,
+      "layer": [
+        {
+          "mark": {
+            "type": "bar",
+            "cornerRadiusEnd": 4,
+            "tooltip": true
+          },
+          "encoding": {
+            "y": {
+              "field": "condition",
+              "type": "nominal",
+              "sort": "-x",
+              "axis": { "labelFontSize": 13, "labelFontWeight": 600 },
+              "title": null
+            },
+            "x": {
+              "field": "excess_readmit_ratio",
+              "type": "quantitative",
+              "title": "Excess Readmission Ratio (ERR)",
+              "scale": { "domain": [0, 2.0] }
+            },
+            "color": {
+              "condition": {
+                "test": "datum.excess_readmit_ratio > 1.0",
+                "value": "#ef4444"
+              },
+              "value": "#22c55e"
+            },
+            "tooltip": [
+              { "field": "condition", "title": "Condition" },
+              { "field": "observed_readmit_pct", "title": "Observed %", "format": ".1f" },
+              { "field": "national_expected_pct", "title": "Expected %", "format": ".1f" },
+              { "field": "excess_readmit_ratio", "title": "ERR", "format": ".3f" },
+              { "field": "simulated_hrrp_penalty", "title": "Penalty $", "format": "$,.0f" }
+            ]
+          }
+        },
+        {
+          "mark": { "type": "rule", "color": "#f59e0b", "strokeWidth": 2, "strokeDash": [4, 3] },
+          "encoding": {
+            "x": { "datum": 1.0 }
+          }
+        },
+        {
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "dx": 6,
+            "dy": -8,
+            "color": "#f59e0b",
+            "fontSize": 10
+          },
+          "encoding": {
+            "x": { "datum": 1.0 },
+            "y": { "datum": "" },
+            "text": { "value": "Penalty threshold" }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Simulated HRRP Penalty Exposure ($)",
+      "width": 520,
+      "height": 160,
+      "mark": {
+        "type": "bar",
+        "cornerRadiusEnd": 4,
+        "tooltip": true
+      },
+      "encoding": {
+        "y": {
+          "field": "condition",
+          "type": "nominal",
+          "sort": "-x",
+          "title": null,
+          "axis": { "labelFontSize": 13 }
+        },
+        "x": {
+          "field": "simulated_hrrp_penalty",
+          "type": "quantitative",
+          "title": "Projected Penalty Amount (USD)",
+          "axis": { "format": "$,.0f" }
+        },
+        "color": {
+          "condition": {
+            "test": "datum.simulated_hrrp_penalty > 0",
+            "value": "#f97316"
+          },
+          "value": "#374151"
+        },
+        "tooltip": [
+          { "field": "condition", "title": "Condition" },
+          { "field": "base_payments", "title": "Base Payments $", "format": "$,.0f" },
+          { "field": "total_readmit_impact", "title": "Readmit Impact $", "format": "$,.0f" },
+          { "field": "simulated_hrrp_penalty", "title": "Penalty $", "format": "$,.0f" }
+        ]
+      }
+    },
+    {
+      "title": "Observed vs. National Expected Readmission Rate (%)",
+      "width": 520,
+      "height": 180,
+      "transform": [
+        { "fold": ["observed_readmit_pct", "national_expected_pct"],
+          "as": ["metric", "value"] }
+      ],
+      "mark": { "type": "bar", "tooltip": true },
+      "encoding": {
+        "y": {
+          "field": "condition",
+          "type": "nominal",
+          "sort": "-x",
+          "title": null
+        },
+        "x": {
+          "field": "value",
+          "type": "quantitative",
+          "title": "Readmission Rate (%)"
+        },
+        "color": {
+          "field": "metric",
+          "scale": {
+            "domain": ["observed_readmit_pct", "national_expected_pct"],
+            "range": ["#3b82f6", "#6b7280"]
+          },
+          "legend": { "title": null,
+            "labelExpr": "datum.value === 'observed_readmit_pct' ? 'Observed' : 'National Expected'" }
+        },
+        "xOffset": { "field": "metric" },
+        "tooltip": [
+          { "field": "condition" },
+          { "field": "metric", "title": "Metric" },
+          { "field": "value", "title": "Rate %", "format": ".1f" }
+        ]
+      }
+    }
+  ]
+}

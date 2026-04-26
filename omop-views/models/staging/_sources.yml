@@ -1,0 +1,172 @@
+version: 2
+
+sources:
+  # ═══════════════════════════════════════════════════════════════
+  # FORGE-CORE NORMALIZED SUB-TABLES
+  #
+  # Table names use forge-core's 4-char truncation + rank convention.
+  # These defaults match standard FHIR R4 (Synthea). For custom
+  # profiles, regenerate with: python discover_table_map.py
+  # and override the forge_tables var in your dbt_project.yml.
+  #
+  # The identifier column in each table (table_path) contains the
+  # canonical FHIR path, which is always deterministic regardless
+  # of the truncated table name.
+  # ═══════════════════════════════════════════════════════════════
+
+  - name: forge_patient
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_patient_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: patient_raw
+        identifier: "{{ var('forge_tables')['patient']['raw'] }}"
+      - name: patient_extension
+        identifier: "{{ var('forge_tables')['patient']['extension'] }}"
+      - name: patient_ext_ext
+        identifier: "{{ var('forge_tables')['patient']['ext_ext'] }}"
+      - name: patient_ext_ext_val
+        identifier: "{{ var('forge_tables')['patient']['ext_ext_val'] }}"
+
+  - name: forge_encounter
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_encounter_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: encounter_raw
+        identifier: "{{ var('forge_tables')['encounter']['raw'] }}"
+      - name: encounter_class
+        identifier: "{{ var('forge_tables')['encounter']['class'] }}"
+      - name: encounter_period
+        identifier: "{{ var('forge_tables')['encounter']['period'] }}"
+      - name: encounter_participant
+        identifier: "{{ var('forge_tables')['encounter']['participant'] }}"
+      - name: encounter_part_indiv
+        identifier: "{{ var('forge_tables')['encounter']['part_indiv'] }}"
+      - name: encounter_subject
+        identifier: "{{ var('forge_tables')['encounter']['subject'] }}"
+
+  - name: forge_condition
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_condition_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: condition_raw
+        identifier: "{{ var('forge_tables')['condition']['raw'] }}"
+      - name: condition_code
+        identifier: "{{ var('forge_tables')['condition']['code'] }}"
+      - name: condition_code_coding
+        identifier: "{{ var('forge_tables')['condition']['code_coding'] }}"
+      - name: condition_subject
+        identifier: "{{ var('forge_tables')['condition']['subject'] }}"
+      - name: condition_encounter
+        identifier: "{{ var('forge_tables')['condition']['encounter'] }}"
+
+  - name: forge_procedure
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_procedure_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: procedure_raw
+        identifier: "{{ var('forge_tables')['procedure']['raw'] }}"
+      - name: procedure_code
+        identifier: "{{ var('forge_tables')['procedure']['code'] }}"
+      - name: procedure_code_coding
+        identifier: "{{ var('forge_tables')['procedure']['code_coding'] }}"
+      - name: procedure_performed
+        identifier: "{{ var('forge_tables')['procedure']['performed'] }}"
+      - name: procedure_subject
+        identifier: "{{ var('forge_tables')['procedure']['subject'] }}"
+      - name: procedure_encounter
+        identifier: "{{ var('forge_tables')['procedure']['encounter'] }}"
+
+  - name: forge_observation
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_observation_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: observation_raw
+        identifier: "{{ var('forge_tables')['observation']['raw'] }}"
+      - name: observation_code
+        identifier: "{{ var('forge_tables')['observation']['code'] }}"
+      - name: observation_code_coding
+        identifier: "{{ var('forge_tables')['observation']['code_coding'] }}"
+      - name: observation_value
+        identifier: "{{ var('forge_tables')['observation']['value'] }}"
+      - name: observation_subject
+        identifier: "{{ var('forge_tables')['observation']['subject'] }}"
+      - name: observation_encounter
+        identifier: "{{ var('forge_tables')['observation']['encounter'] }}"
+
+  - name: forge_medication_request
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_medication_request_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: med_request_raw
+        identifier: "{{ var('forge_tables')['medication_request']['raw'] }}"
+      - name: med_request_med_concept
+        identifier: "{{ var('forge_tables')['medication_request']['med_concept'] }}"
+      - name: med_request_med_coding
+        identifier: "{{ var('forge_tables')['medication_request']['med_coding'] }}"
+      - name: med_request_subject
+        identifier: "{{ var('forge_tables')['medication_request']['subject'] }}"
+      - name: med_request_encounter
+        identifier: "{{ var('forge_tables')['medication_request']['encounter'] }}"
+
+  - name: forge_claim
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_claim_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: claim_raw
+        identifier: "{{ var('forge_tables')['claim']['raw'] }}"
+      - name: claim_billable_period
+        identifier: "{{ var('forge_tables')['claim']['billable_period'] }}"
+      - name: claim_provider
+        identifier: "{{ var('forge_tables')['claim']['provider'] }}"
+      - name: claim_patient
+        identifier: "{{ var('forge_tables')['claim']['patient'] }}"
+      - name: claim_facility
+        identifier: "{{ var('forge_tables')['claim']['facility'] }}"
+      - name: claim_priority
+        identifier: "{{ var('forge_tables')['claim']['priority'] }}"
+      - name: claim_priority_coding
+        identifier: "{{ var('forge_tables')['claim']['priority_coding'] }}"
+      - name: claim_item
+        identifier: "{{ var('forge_tables')['claim']['item'] }}"
+      - name: claim_item_encounter
+        identifier: "{{ var('forge_tables')['claim']['item_encounter'] }}"
+      - name: claim_item_net
+        identifier: "{{ var('forge_tables')['claim']['item_net'] }}"
+      - name: claim_item_product_coding
+        identifier: "{{ var('forge_tables')['claim']['item_product_coding'] }}"
+
+  - name: forge_eob
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_eob_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: eob_raw
+        identifier: "{{ var('forge_tables')['eob']['raw'] }}"
+      - name: eob_patient
+        identifier: "{{ var('forge_tables')['eob']['patient'] }}"
+      - name: eob_insurer
+        identifier: "{{ var('forge_tables')['eob']['insurer'] }}"
+      - name: eob_total
+        identifier: "{{ var('forge_tables')['eob']['total'] }}"
+      - name: eob_total_amount
+        identifier: "{{ var('forge_tables')['eob']['total_amount'] }}"
+      - name: eob_payment
+        identifier: "{{ var('forge_tables')['eob']['payment'] }}"
+      - name: eob_payment_amount
+        identifier: "{{ var('forge_tables')['eob']['payment_amount'] }}"
+

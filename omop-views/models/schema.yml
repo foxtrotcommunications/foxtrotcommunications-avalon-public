@@ -1,0 +1,298 @@
+version: 2
+
+models:
+  # ═══════════════════════════════════════════════════════════
+  # OMOP CDM 5.4 — Schema Tests
+  # ═══════════════════════════════════════════════════════════
+
+  - name: omop_person
+    description: "OMOP CDM 5.4 PERSON table — one row per patient"
+    columns:
+      - name: person_id
+        description: "Deterministic ID via ABS(FARM_FINGERPRINT(patient_id))"
+        tests:
+          - unique
+          - not_null
+      - name: gender_concept_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [8507, 8532, 44814653, 8551, 0]
+      - name: year_of_birth
+        tests:
+          - not_null
+      - name: person_source_value
+        description: "Original FHIR Patient.id"
+        tests:
+          - not_null
+
+  - name: omop_visit_occurrence
+    description: "OMOP CDM 5.4 VISIT_OCCURRENCE — one row per encounter"
+    columns:
+      - name: visit_occurrence_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: visit_concept_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [9201, 9202, 9203, 581399, 581476, 0]
+      - name: visit_start_date
+        tests:
+          - not_null
+
+  - name: omop_observation_period
+    description: "OMOP CDM 5.4 OBSERVATION_PERIOD — one row per patient"
+    columns:
+      - name: observation_period_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: observation_period_start_date
+        tests:
+          - not_null
+      - name: observation_period_end_date
+        tests:
+          - not_null
+
+  - name: omop_condition_occurrence
+    description: "OMOP CDM 5.4 CONDITION_OCCURRENCE — one row per condition event"
+    columns:
+      - name: condition_occurrence_id
+        tests:
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: visit_occurrence_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_visit_occurrence')
+              field: visit_occurrence_id
+      - name: condition_start_date
+        tests:
+          - not_null
+      - name: condition_source_value
+        description: "SNOMED code from FHIR Condition.code.coding.code"
+        tests:
+          - not_null
+
+  - name: omop_procedure_occurrence
+    description: "OMOP CDM 5.4 PROCEDURE_OCCURRENCE — one row per procedure event"
+    columns:
+      - name: procedure_occurrence_id
+        tests:
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: procedure_date
+        tests:
+          - not_null
+      - name: procedure_source_value
+        description: "SNOMED code from FHIR Procedure.code.coding.code"
+        tests:
+          - not_null
+
+  - name: omop_drug_exposure
+    description: "OMOP CDM 5.4 DRUG_EXPOSURE — one row per medication event"
+    columns:
+      - name: drug_exposure_id
+        tests:
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: drug_exposure_start_date
+        tests:
+          - not_null
+      - name: drug_source_value
+        tests:
+          - not_null
+
+  - name: omop_measurement
+    description: "OMOP CDM 5.4 MEASUREMENT — numeric observations (labs)"
+    columns:
+      - name: measurement_id
+        tests:
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: measurement_date
+        tests:
+          - not_null
+      - name: measurement_source_value
+        description: "LOINC code"
+        tests:
+          - not_null
+
+  - name: omop_observation
+    description: "OMOP CDM 5.4 OBSERVATION — non-numeric clinical findings"
+    columns:
+      - name: observation_id
+        tests:
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: observation_date
+        tests:
+          - not_null
+
+  - name: omop_death
+    description: "OMOP CDM 5.4 DEATH — deceased patients"
+    columns:
+      - name: person_id
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: death_date
+        tests:
+          - not_null
+
+  - name: omop_cost
+    description: "OMOP CDM 5.4 COST — claim item-level costs joined with EOB payments"
+    columns:
+      - name: cost_id
+        tests:
+          - unique
+          - not_null
+      - name: cost_event_id
+        tests:
+          - not_null
+      - name: total_charge
+        tests:
+          - not_null
+
+  - name: omop_payer_plan_period
+    description: "OMOP CDM 5.4 PAYER_PLAN_PERIOD — coverage periods per patient+insurer"
+    columns:
+      - name: payer_plan_period_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('omop_person')
+              field: person_id
+      - name: payer_plan_period_start_date
+        tests:
+          - not_null
+      - name: payer_plan_period_end_date
+        tests:
+          - not_null
+
+  # ═══════════════════════════════════════════════════════════
+  # STAGING MODELS — Contract tests
+  # ═══════════════════════════════════════════════════════════
+
+  - name: stg_patient
+    description: "Flattened Patient from forge-core sub-tables"
+    columns:
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_encounter
+    description: "Flattened Encounter from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_condition
+    description: "Flattened Condition from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_procedure
+    description: "Flattened Procedure from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_observation
+    description: "Flattened Observation from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_medication_request
+    description: "Flattened MedicationRequest from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: med_code
+        tests:
+          - not_null
