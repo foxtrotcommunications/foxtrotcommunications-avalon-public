@@ -1,0 +1,89 @@
+name: CI — Validate Views & Packages
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-sql:
+    name: Validate SQL Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff
+
+      - name: Lint BigQuery views
+        run: |
+          sqlfluff lint omop-views/bigquery/ \
+            --dialect bigquery \
+            --exclude-rules LT05,LT12 \
+            || true  # non-blocking during initial setup
+
+      - name: Lint package SQL
+        run: |
+          for pkg in packages/*/; do
+            if [ -d "$pkg/queries" ]; then
+              sqlfluff lint "$pkg/queries/" \
+                --dialect bigquery \
+                --exclude-rules LT05,LT12 \
+                || true
+            fi
+          done
+
+  validate-manifests:
+    name: Validate Package Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install jsonschema
+        run: pip install jsonschema
+
+      - name: Validate manifests
+        run: |
+          python3 -c "
+          import json, sys, os
+          for pkg_dir in os.listdir('packages'):
+            manifest_path = os.path.join('packages', pkg_dir, 'manifest.json')
+            if os.path.isfile(manifest_path):
+              with open(manifest_path) as f:
+                m = json.load(f)
+              assert 'id' in m, f'{manifest_path}: missing id'
+              assert 'version' in m, f'{manifest_path}: missing version'
+              assert 'required_tables' in m, f'{manifest_path}: missing required_tables'
+              print(f'  ✓ {pkg_dir} v{m[\"version\"]}')
+          print('All manifests valid.')
+          "
+
+  validate-contract:
+    name: Validate Forge Table Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check contract integrity
+        run: |
+          python3 -c "
+          import json
+          with open('forge-table-contract/contract.json') as f:
+            contract = json.load(f)
+          assert 'version' in contract
+          assert 'tables' in contract
+          for name, table in contract['tables'].items():
+            assert 'fhir_resource' in table, f'{name}: missing fhir_resource'
+            assert 'required_columns' in table, f'{name}: missing required_columns'
+            for col in table['required_columns']:
+              assert 'name' in col and 'type' in col, f'{name}: column missing name/type'
+          print(f'Contract v{contract[\"version\"]}: {len(contract[\"tables\"])} tables validated.')
+          "

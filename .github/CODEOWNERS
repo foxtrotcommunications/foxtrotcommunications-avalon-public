@@ -1,0 +1,5 @@
+# Core maintainers must approve all changes
+*                               @foxtrotcommunications/core
+
+# Forge table contract changes are critical — require extra review
+forge-table-contract/           @foxtrotcommunications/core
