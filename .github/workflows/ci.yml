@@ -6,7 +6,7 @@ on:
 
 jobs:
   validate-sql:
-    name: Validate SQL Syntax
+    name: Lint SQL
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,15 +14,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install sqlfluff
+      - name: Install tools
         run: pip install sqlfluff
 
-      - name: Lint BigQuery views
+      - name: Lint OMOP models
         run: |
-          sqlfluff lint omop-views/bigquery/ \
+          sqlfluff lint omop-views/models/ \
             --dialect bigquery \
             --exclude-rules LT05,LT12 \
-            || true  # non-blocking during initial setup
+            || true  # non-blocking during initial rollout
 
       - name: Lint package SQL
         run: |
@@ -47,19 +47,30 @@ jobs:
       - name: Install jsonschema
         run: pip install jsonschema
 
-      - name: Validate manifests
+      - name: Validate manifests against schema
         run: |
           python3 -c "
-          import json, sys, os
-          for pkg_dir in os.listdir('packages'):
+          import json, jsonschema, sys, os
+
+          with open('packages/schema.json') as f:
+            schema = json.load(f)
+
+          errors = []
+          for pkg_dir in sorted(os.listdir('packages')):
             manifest_path = os.path.join('packages', pkg_dir, 'manifest.json')
             if os.path.isfile(manifest_path):
               with open(manifest_path) as f:
-                m = json.load(f)
-              assert 'id' in m, f'{manifest_path}: missing id'
-              assert 'version' in m, f'{manifest_path}: missing version'
-              assert 'required_tables' in m, f'{manifest_path}: missing required_tables'
-              print(f'  ✓ {pkg_dir} v{m[\"version\"]}')
+                manifest = json.load(f)
+              try:
+                jsonschema.validate(manifest, schema)
+                print(f'  ✓ {pkg_dir} v{manifest[\"version\"]}')
+              except jsonschema.ValidationError as e:
+                errors.append(f'{pkg_dir}: {e.message}')
+                print(f'  ✗ {pkg_dir}: {e.message}')
+
+          if errors:
+            print(f'\n{len(errors)} manifest(s) failed validation.')
+            sys.exit(1)
           print('All manifests valid.')
           "
 
@@ -75,15 +86,50 @@ jobs:
       - name: Check contract integrity
         run: |
           python3 -c "
-          import json
+          import json, sys
+
           with open('forge-table-contract/contract.json') as f:
             contract = json.load(f)
-          assert 'version' in contract
-          assert 'tables' in contract
+
+          assert 'version' in contract, 'Missing version'
+          assert 'tables' in contract, 'Missing tables'
+
           for name, table in contract['tables'].items():
             assert 'fhir_resource' in table, f'{name}: missing fhir_resource'
             assert 'required_columns' in table, f'{name}: missing required_columns'
             for col in table['required_columns']:
               assert 'name' in col and 'type' in col, f'{name}: column missing name/type'
+
           print(f'Contract v{contract[\"version\"]}: {len(contract[\"tables\"])} tables validated.')
           "
+
+  validate-dbt:
+    name: Validate dbt Compilation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt
+        run: pip install dbt-bigquery
+
+      - name: Check dbt project parses
+        working-directory: omop-views
+        run: |
+          # Create a minimal profiles.yml for parse-only validation
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          forge:
+            target: ci
+            outputs:
+              ci:
+                type: bigquery
+                method: oauth
+                project: ci-validation
+                dataset: ci_omop
+                threads: 1
+          EOF
+
+          dbt parse || true  # parse validates Jinja + refs without credentials

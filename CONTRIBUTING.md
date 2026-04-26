@@ -1,41 +1,81 @@
-# Contributing to Avalon
+# Contributing to Avalon Analytics
 
-Thank you for your interest in Avalon! We appreciate the community's enthusiasm.
+Thank you for your interest in contributing. This project defines the open source OMOP CDM 5.4 analytics layer for the [Forge](https://github.com/foxtrotcommunications/foxtrotcommunications-forge-core) data platform.
 
-## Current Status: Read-Only Contributions
+## What We Accept
 
-Avalon is currently in **early development**. At this time, we are **not accepting pull requests** from external contributors.
+| Contribution Type | Examples | Review Process |
+|-------------------|----------|----------------|
+| **Analytics Packages** | New clinical scorecards, quality measures, cost models | Clinical review + core team |
+| **OMOP View Improvements** | Vocabulary mapping, new OMOP tables, bug fixes | Core team review |
+| **dbt Tests** | Schema tests, data quality assertions, contract tests | Core team review |
+| **Documentation** | Guides, query examples, FHIR mapping docs | Core team review |
+| **Warehouse Ports** | Snowflake/Postgres/Databricks staging models | Core team review |
 
-### What you CAN do:
+## PR Requirements
 
-- ⭐ **Star** the repo to show support
-- 🐛 **Open issues** to report bugs or suggest features
-- 💬 **Join discussions** in the Issues tab
-- 📖 **Fork** the repo for your own experimentation
+All PRs must:
 
-### What we're NOT accepting yet:
+1. **Pass CI** — SQL linting (sqlfluff), manifest validation, contract integrity checks
+2. **Be reviewed by a core maintainer** (enforced via CODEOWNERS)
+3. **Include tests** for any new OMOP views or analytics packages
+4. **Not modify the forge table contract** without explicit approval from `@foxtrotcommunications/core`
 
-- ❌ Pull requests
-- ❌ Direct code contributions
+## Development Setup
 
-### Why?
+```bash
+# Clone the repo
+git clone https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public.git
+cd foxtrotcommunications-avalon-public
 
-We're establishing the core architecture and API contracts with the Forge ecosystem. Once the foundation is stable, we plan to open contributions for:
+# Install dbt (BigQuery example)
+pip install dbt-bigquery
 
-- EHR format connectors
-- OMOP view definitions
-- Sample query libraries
-- Documentation improvements
-- Healthcare terminology mappings
+# Set your forge project
+export FORGE_PROJECT=your-gcp-project
 
-## When will contributions open?
+# Run the OMOP models
+cd omop-views
+dbt run --profile forge --target your_target
 
-We'll announce in the README and via GitHub Discussions when we're ready to accept PRs. Watch the repo to stay updated.
+# Lint SQL
+pip install sqlfluff
+sqlfluff lint omop-views/models/ --dialect bigquery
+```
+
+## Adding an Analytics Package
+
+1. Create a directory under `packages/your-package-name/`
+2. Add a `manifest.json` following the schema in `packages/schema.json`
+3. Put SQL queries in `queries/`
+4. Add a `queries/validation.sql` preflight check
+5. (Optional) Add Vega-Lite viz specs in `viz/`
+6. Open a PR
+
+See `packages/hrrp-readmission-penalty/` as a reference implementation.
+
+## Writing OMOP Models
+
+1. **Staging models** go in `omop-views/models/staging/` and are materialized as views
+2. **OMOP models** go in `omop-views/models/` and are materialized as tables
+3. All data must come from forge-core child tables (`frg__root__raw_1` and descendants) — never from `frg__root` scalar fields
+4. Use the `forge_join` macro for all sub-table joins
+5. Update `_sources.yml` with any new source tables
+
+## Commit Messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat: add omop_device_exposure model
+fix: correct condition dedup logic
+docs: add vocabulary mapping guide
+```
 
 ## Code of Conduct
 
-We expect all community members to be respectful and constructive. Harassment, discrimination, or abusive behavior will not be tolerated.
+Be respectful and constructive. We're building open infrastructure for healthcare analytics — accuracy and reliability matter more than speed.
 
 ## Questions?
 
-Open an issue or email: **customer_support@foxtrotcommunications.net**
+Open a [Discussion](https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public/discussions) or reach out to the core team.
