@@ -112,6 +112,5 @@ vars:
 models:
   avalon_omop:
     +materialized: table
-    +schema: omop
     staging:
       +materialized: view
