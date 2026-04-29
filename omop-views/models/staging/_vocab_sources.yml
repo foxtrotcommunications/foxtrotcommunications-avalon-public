@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: omop_vocab
+    description: >
+      OHDSI Standardized Vocabularies (SNOMED, LOINC, RxNorm) loaded by
+      scripts/load_vocab.py. Used for resolving FHIR source codes to OMOP
+      Standard concept_ids across all OMOP models.
+    database: "{{ var('omop_vocab_project', var('forge_project')) }}"
+    schema: "{{ var('omop_vocab_dataset', 'omop_vocab') }}"
+    tables:
+      - name: concept
+        description: OMOP concept table — one row per clinical concept in all vocabularies.
+        columns:
+          - name: concept_id
+            description: Unique OMOP integer concept identifier.
+          - name: concept_name
+            description: Human-readable concept name.
+          - name: domain_id
+            description: OMOP domain (Condition, Drug, Measurement, Observation, Procedure, etc.)
+          - name: vocabulary_id
+            description: Source vocabulary (SNOMED, LOINC, RxNorm, etc.)
+          - name: concept_code
+            description: Code as it appears in the source vocabulary.
+          - name: standard_concept
+            description: "'S' = Standard concept, 'C' = Classification, NULL = Non-standard."
+          - name: invalid_reason
+            description: Null if valid; 'D' (deleted) or 'U' (updated) if retired.
+
+      - name: concept_relationship
+        description: Relationships between concepts, including 'Maps to' for standard mapping.
+        columns:
+          - name: concept_id_1
+            description: Source concept.
+          - name: concept_id_2
+            description: Target concept.
+          - name: relationship_id
+            description: Relationship type (e.g., 'Maps to', 'Maps to value').
+
+      - name: concept_map
+        description: >
+          Pre-joined view: source_code + source_vocabulary → standard_concept_id.
+          Created automatically by scripts/load_vocab.py. This is the single
+          lookup table all OMOP dbt models join against.
+        columns:
+          - name: source_code
+            description: Code from the source vocabulary (e.g., SNOMED code string).
+          - name: source_vocabulary
+            description: Vocabulary the source code belongs to (SNOMED, LOINC, RxNorm).
+          - name: source_concept_id
+            description: OMOP concept_id for the non-standard source concept.
+          - name: standard_concept_id
+            description: OMOP Standard concept_id to write into *_concept_id fields.
+          - name: domain_id
+            description: OMOP domain of the standard concept.

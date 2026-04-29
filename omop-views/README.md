@@ -28,16 +28,62 @@ Staging models are **views** that join forge-core's sub-tables (the `frg__` tabl
 ## Quick Start
 
 ```bash
-# Clone
+# 1. Clone
 git clone https://github.com/foxtrotcommunications/foxtrotcommunications-avalon-public.git
 cd foxtrotcommunications-avalon-public/omop-views
 
-# Configure your forge project
+# 2. Load OMOP vocabulary (one-time setup — required for concept_id resolution)
+pip install google-cloud-bigquery pandas
+python scripts/load_vocab.py --project your-gcp-project --from-gcs
+
+# 3. Configure your forge project
 export FORGE_PROJECT=your-gcp-project
 
-# Run
+# 4. Run all OMOP models
 dbt run --profile forge --target your_target
 ```
+
+## Vocabulary Setup
+
+All `*_concept_id` fields (e.g., `condition_concept_id`, `drug_concept_id`) are resolved
+using the OHDSI Standardized Vocabularies (SNOMED CT, LOINC, RxNorm). The `load_vocab.py`
+script handles loading these into BigQuery before your first `dbt run`.
+
+### Option A — Public GCS Snapshot (recommended)
+
+Uses a pre-filtered ~40 MB snapshot hosted by Foxtrot Communications. No Athena account needed.
+
+```bash
+python scripts/load_vocab.py \
+  --project your-gcp-project \
+  --from-gcs
+```
+
+### Option B — Local Athena Download
+
+For production deployments where you want to control the vocabulary source and update cadence.
+
+1. Create a free account at [athena.ohdsi.org](https://athena.ohdsi.org/)
+2. Download a vocabulary bundle — select: **SNOMED, LOINC, RxNorm, Gender, Race, Ethnicity**
+3. Extract the ZIP and point the script at the folder:
+
+```bash
+python scripts/load_vocab.py \
+  --project your-gcp-project \
+  --athena-dir /path/to/extracted/athena
+```
+
+### What gets loaded
+
+| BigQuery Table | Contents |
+|---|---|
+| `omop_vocab.concept` | ~1.2M concepts (SNOMED + LOINC + RxNorm filtered) |
+| `omop_vocab.concept_relationship` | `Maps to` and `Maps to value` relationships only |
+| `omop_vocab.concept_map` | Pre-joined view: `source_code + vocabulary → standard_concept_id` |
+
+The `concept_map` view is what all OMOP dbt models join against via the
+`resolve_concept()` macro. If the vocab tables are not present, every model
+gracefully falls back to `concept_id = 0` — the same behavior as the pre-vocabulary baseline.
 
 ## Configuration
 
@@ -49,6 +95,10 @@ vars:
   forge_patient_dataset: "fhir_normalized_patient"
   forge_encounter_dataset: "fhir_normalized_encounter"
   # ... etc
+
+  # Vocabulary dataset (created by load_vocab.py)
+  omop_vocab_project: "your-gcp-project"   # defaults to forge_project
+  omop_vocab_dataset: "omop_vocab"          # default
 ```
 
 ## Models
