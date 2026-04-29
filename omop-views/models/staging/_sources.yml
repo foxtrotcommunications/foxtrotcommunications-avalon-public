@@ -47,6 +47,17 @@ sources:
         identifier: "{{ var('forge_tables')['encounter']['part_indiv'] }}"
       - name: encounter_subject
         identifier: "{{ var('forge_tables')['encounter']['subject'] }}"
+      # Encounter.hospitalization (inpatient only — LEFT JOINed, null for outpatient)
+      - name: encounter_hosp
+        identifier: "{{ var('forge_tables')['encounter']['hosp'] }}"
+      - name: encounter_admit_source
+        identifier: "{{ var('forge_tables')['encounter']['hosp_admit_source'] }}"
+      - name: encounter_admit_coding
+        identifier: "{{ var('forge_tables')['encounter']['hosp_admit_coding'] }}"
+      - name: encounter_disch_disp
+        identifier: "{{ var('forge_tables')['encounter']['hosp_disch_disp'] }}"
+      - name: encounter_disch_coding
+        identifier: "{{ var('forge_tables')['encounter']['hosp_disch_coding'] }}"
 
   - name: forge_condition
     database: "{{ var('forge_project') }}"
@@ -96,8 +107,10 @@ sources:
         identifier: "{{ var('forge_tables')['observation']['code'] }}"
       - name: observation_code_coding
         identifier: "{{ var('forge_tables')['observation']['code_coding'] }}"
-      - name: observation_value
-        identifier: "{{ var('forge_tables')['observation']['value'] }}"
+      - name: observation_value_quantity
+        identifier: "{{ var('forge_tables')['observation']['value_quantity'] }}"
+      - name: observation_value_cc_coding
+        identifier: "{{ var('forge_tables')['observation']['value_cc_coding'] }}"
       - name: observation_subject
         identifier: "{{ var('forge_tables')['observation']['subject'] }}"
       - name: observation_encounter
@@ -119,6 +132,13 @@ sources:
         identifier: "{{ var('forge_tables')['medication_request']['subject'] }}"
       - name: med_request_encounter
         identifier: "{{ var('forge_tables')['medication_request']['encounter'] }}"
+      # MedicationRequest.dosageInstruction (route coding for route_concept_id)
+      - name: med_request_dosage
+        identifier: "{{ var('forge_tables')['medication_request']['dosage'] }}"
+      - name: med_request_dosage_route
+        identifier: "{{ var('forge_tables')['medication_request']['dosage_route'] }}"
+      - name: med_request_route_coding
+        identifier: "{{ var('forge_tables')['medication_request']['dosage_route_coding'] }}"
 
   - name: forge_claim
     database: "{{ var('forge_project') }}"

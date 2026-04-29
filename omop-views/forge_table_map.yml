@@ -43,7 +43,8 @@ forge_tables:
     raw:           "frg__root__raw_1"
     code:          "frg__root__raw_1__code1"
     code_coding:   "frg__root__raw_1__code1__codi1"
-    value:         "frg__root__raw_1__valu1"
+    value_quantity:  "frg__root__raw_1__valu2"
+    value_cc_coding: "frg__root__raw_1__valu1__codi1"
     subject:       "frg__root__raw_1__subj1"
     encounter:     "frg__root__raw_1__enco1"
   medication_request:

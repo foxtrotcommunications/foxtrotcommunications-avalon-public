@@ -17,7 +17,7 @@ SELECT
   raw.status,
   raw.outcome,
   REPLACE(COALESCE(pat.reference, ''), 'urn:uuid:', '') AS patient_id,
-  ins_org.reference AS insurer_reference,
+  CAST(NULL AS STRING) AS insurer_reference,
   ins_org.display AS insurer_display,
   total_amt.value AS total_amount,
   total_amt.currency AS total_currency,
