@@ -27,10 +27,8 @@ FROM (
   SELECT
     patient_id,
     insurer_display,
-    MIN(SAFE.PARSE_DATE('%Y-%m-%d', SUBSTR(ingestion_timestamp, 1, 10)))
-      AS payer_plan_period_start_date,
-    MAX(SAFE.PARSE_DATE('%Y-%m-%d', SUBSTR(ingestion_timestamp, 1, 10)))
-      AS payer_plan_period_end_date
+    MIN(DATE(ingestion_timestamp)) AS payer_plan_period_start_date,
+    MAX(DATE(ingestion_timestamp)) AS payer_plan_period_end_date
   FROM {{ ref('stg_explanation_of_benefit') }}
   WHERE insurer_display IS NOT NULL
   GROUP BY patient_id, insurer_display

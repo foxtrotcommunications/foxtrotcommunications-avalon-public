@@ -67,10 +67,10 @@ SELECT
   CAST(NULL AS INT64) AS care_site_id,
   p.patient_id AS person_source_value,
   p.gender AS gender_source_value,
-  0 AS gender_source_concept_id,
+  {{ resolve_source_concept('p.gender', 'Gender') }} AS gender_source_concept_id,
   pe.race_display AS race_source_value,
-  0 AS race_source_concept_id,
+  {{ resolve_source_concept('pe.race_code', 'Race') }} AS race_source_concept_id,
   pe.ethnicity_display AS ethnicity_source_value,
-  0 AS ethnicity_source_concept_id
+  {{ resolve_source_concept('pe.ethnicity_code', 'Ethnicity') }} AS ethnicity_source_concept_id
 FROM patient_latest p
 LEFT JOIN patient_extensions pe ON pe.patient_id = p.patient_id

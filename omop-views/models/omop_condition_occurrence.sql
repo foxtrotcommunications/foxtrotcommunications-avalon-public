@@ -7,7 +7,7 @@
 SELECT
   ABS(FARM_FINGERPRINT(cond.resource_id)) AS condition_occurrence_id,
   ABS(FARM_FINGERPRINT(cond.patient_id)) AS person_id,
-  0 AS condition_concept_id,
+  {{ resolve_concept('cond.code', 'SNOMED') }} AS condition_concept_id,
   SAFE.PARSE_DATE('%Y-%m-%d', SUBSTR(cond.effective_date, 1, 10)) AS condition_start_date,
   SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S', SUBSTR(cond.effective_date, 1, 19)) AS condition_start_datetime,
   CAST(NULL AS DATE) AS condition_end_date,
@@ -18,7 +18,7 @@ SELECT
   ABS(FARM_FINGERPRINT(cond.encounter_id)) AS visit_occurrence_id,
   CAST(NULL AS INT64) AS visit_detail_id,
   cond.code AS condition_source_value,
-  0 AS condition_source_concept_id,
+  {{ resolve_source_concept('cond.code', 'SNOMED') }} AS condition_source_concept_id,
   REGEXP_EXTRACT(cond.clinical_status, r'"code":"([^"]+)"') AS condition_status_source_value,
   CASE REGEXP_EXTRACT(cond.clinical_status, r'"code":"([^"]+)"')
     WHEN 'active'   THEN 32901
