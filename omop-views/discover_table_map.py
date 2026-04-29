@@ -54,6 +54,11 @@ REQUIRED_PATHS = {
         "participant": "frg__root__participant",
         "participant.individual": "frg__root__participant__individual",
         "subject": "frg__root__subject",
+        "hospitalization": "frg__root__hospitalization",
+        "hospitalization.admitSource": "frg__root__hospitalization__admitSource",
+        "hospitalization.admitSource.coding": "frg__root__hospitalization__admitSource__coding",
+        "hospitalization.dischargeDisposition": "frg__root__hospitalization__dischargeDisposition",
+        "hospitalization.dischargeDisposition.coding": "frg__root__hospitalization__dischargeDisposition__coding",
     },
     "condition": {
         "raw": "frg__root",
@@ -84,6 +89,9 @@ REQUIRED_PATHS = {
         "medicationCodeableConcept.coding": "frg__root__medicationCodeableConcept__coding",
         "subject": "frg__root__subject",
         "encounter": "frg__root__encounter",
+        "dosageInstruction": "frg__root__dosageInstruction",
+        "dosageInstruction.route": "frg__root__dosageInstruction__route",
+        "dosageInstruction.route.coding": "frg__root__dosageInstruction__route__coding",
     },
 }
 
