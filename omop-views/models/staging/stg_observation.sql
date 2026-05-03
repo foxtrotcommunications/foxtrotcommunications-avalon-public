@@ -32,7 +32,9 @@ SELECT
   -- valueCodeableConcept fields (coded results — maps to omop_observation)
   val_cc.code         AS value_codeable_concept_code,
   val_cc.display      AS value_codeable_concept_display,
-  val_cc.system       AS value_codeable_concept_system
+  val_cc.system       AS value_codeable_concept_system,
+  -- valueString (free-text results — maps to omop_observation.value_as_string)
+  raw.value_string
 
 FROM {{ source('forge_observation', 'frg__root') }} r
 

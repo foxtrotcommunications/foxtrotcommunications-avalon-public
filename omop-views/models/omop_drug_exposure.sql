@@ -14,17 +14,17 @@ SELECT
   38000177 AS drug_type_concept_id,
   CAST(NULL AS STRING) AS stop_reason,
   CAST(NULL AS INT64) AS refills,
-  CAST(NULL AS FLOAT64) AS quantity,
+  SAFE_CAST(dose_quantity_value AS FLOAT64) AS quantity,
   CAST(NULL AS INT64) AS days_supply,
-  CAST(NULL AS STRING) AS sig,
+  sig,
   {{ resolve_concept('route_code', 'SNOMED') }} AS route_concept_id,
   CAST(NULL AS STRING) AS lot_number,
-  CAST(NULL AS INT64) AS provider_id,
+  COALESCE(ABS(FARM_FINGERPRINT(requester_reference)), 0) AS provider_id,
   ABS(FARM_FINGERPRINT(encounter_id)) AS visit_occurrence_id,
   CAST(NULL AS INT64) AS visit_detail_id,
   med_code AS drug_source_value,
   {{ resolve_source_concept('med_code', 'RxNorm') }} AS drug_source_concept_id,
-  CAST(NULL AS STRING) AS route_source_value,
+  route_display AS route_source_value,
   CAST(NULL AS STRING) AS dose_unit_source_value
 FROM {{ ref('stg_medication_request') }}
 WHERE med_code IS NOT NULL

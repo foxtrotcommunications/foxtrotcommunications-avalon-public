@@ -33,6 +33,12 @@ SELECT
   , CAST(NULL AS STRING) AS route_system
   , CAST(NULL AS STRING) AS route_display
   {% endif %}
+  -- Requester (prescriber → provider_id)
+  , REPLACE(COALESCE(reqr.reference, ''), 'urn:uuid:', '') AS requester_reference
+  -- Dosage instruction text (sig)
+  , dosa.text AS sig
+  -- Dosage dose quantity
+  , dose_qty.value AS dose_quantity_value
 
 FROM {{ source('forge_medication_request', 'frg__root') }} r
 
@@ -41,8 +47,11 @@ FROM {{ source('forge_medication_request', 'frg__root') }} r
 {{ forge_join('med_c',   'forge_medication_request', 'med_request_med_coding',  'med', 4) }}
 {{ forge_join('subj',    'forge_medication_request', 'med_request_subject',     'raw', 3) }}
 {{ forge_join('enc_ref', 'forge_medication_request', 'med_request_encounter',   'raw', 3) }}
+{{ forge_join('reqr',    'forge_medication_request', 'med_request_requester',   'raw', 3) }}
+{{ forge_join('dosa',    'forge_medication_request', 'med_request_dosage',      'raw', 3) }}
+{{ forge_join('dose_dr', 'forge_medication_request', 'med_request_dosage_dose_rate', 'dosa', 4) }}
+{{ forge_join('dose_qty','forge_medication_request', 'med_request_dosage_dose_qty',  'dose_dr', 5) }}
 {% if var('enable_dosage_route', false) %}
-{{ forge_join('dosa',    'forge_medication_request', 'med_request_dosage',        'raw',  3) }}
 {{ forge_join('route',   'forge_medication_request', 'med_request_dosage_route',  'dosa', 4) }}
 {{ forge_join('route_c', 'forge_medication_request', 'med_request_route_coding',  'route', 5) }}
 {% endif %}

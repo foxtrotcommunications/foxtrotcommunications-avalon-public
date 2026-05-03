@@ -10,7 +10,7 @@ SELECT
   SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S', SUBSTR(effective_date, 1, 19)) AS observation_datetime,
   38000280 AS observation_type_concept_id,
   CAST(NULL AS FLOAT64) AS value_as_number,
-  CAST(NULL AS STRING) AS value_as_string,
+  value_string AS value_as_string,
   {{ resolve_concept('value_codeable_concept_code', 'SNOMED') }} AS value_as_concept_id,
   0 AS qualifier_concept_id,
   0 AS unit_concept_id,  -- unit not applicable for coded observations

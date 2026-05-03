@@ -47,6 +47,9 @@ sources:
         identifier: "{{ var('forge_tables')['encounter']['part_indiv'] }}"
       - name: encounter_subject
         identifier: "{{ var('forge_tables')['encounter']['subject'] }}"
+      # Encounter.serviceProvider — organization reference
+      - name: encounter_service_provider
+        identifier: "{{ var('forge_tables')['encounter']['service_provider'] }}"
       # Encounter.hospitalization (inpatient only — LEFT JOINed, null for outpatient)
       - name: encounter_hosp
         identifier: "{{ var('forge_tables')['encounter']['hosp'] }}"
@@ -139,6 +142,15 @@ sources:
         identifier: "{{ var('forge_tables')['medication_request']['dosage_route'] }}"
       - name: med_request_route_coding
         identifier: "{{ var('forge_tables')['medication_request']['dosage_route_coding'] }}"
+      # MedicationRequest.requester — prescriber reference
+      - name: med_request_requester
+        identifier: "{{ var('forge_tables')['medication_request']['requester'] }}"
+      # MedicationRequest.dosageInstruction.doseAndRate
+      - name: med_request_dosage_dose_rate
+        identifier: "{{ var('forge_tables')['medication_request']['dosage_dose_rate'] }}"
+      # MedicationRequest.dosageInstruction.doseAndRate.doseQuantity
+      - name: med_request_dosage_dose_qty
+        identifier: "{{ var('forge_tables')['medication_request']['dosage_dose_qty'] }}"
 
   - name: forge_claim
     database: "{{ var('forge_project') }}"
@@ -189,4 +201,29 @@ sources:
         identifier: "{{ var('forge_tables')['eob']['payment'] }}"
       - name: eob_payment_amount
         identifier: "{{ var('forge_tables')['eob']['payment_amount'] }}"
+      # ExplanationOfBenefit.item — item-level data
+      - name: eob_item
+        identifier: "{{ var('forge_tables')['eob']['item'] }}"
+      # ExplanationOfBenefit.item.adjudication — adjudication breakdown
+      - name: eob_item_adjudication
+        identifier: "{{ var('forge_tables')['eob']['item_adjudication'] }}"
+      - name: eob_item_adj_amount
+        identifier: "{{ var('forge_tables')['eob']['item_adj_amount'] }}"
+      - name: eob_item_adj_category_coding
+        identifier: "{{ var('forge_tables')['eob']['item_adj_category_coding'] }}"
+      # ExplanationOfBenefit.item.encounter — encounter reference
+      - name: eob_item_encounter
+        identifier: "{{ var('forge_tables')['eob']['item_encounter'] }}"
+      # ExplanationOfBenefit.billablePeriod — actual coverage period dates
+      - name: eob_billable_period
+        identifier: "{{ var('forge_tables')['eob']['billable_period'] }}"
+      # ExplanationOfBenefit.contained (Coverage resource)
+      - name: eob_contained
+        identifier: "{{ var('forge_tables')['eob']['contained'] }}"
+      # ExplanationOfBenefit.contained.type (Coverage.type)
+      - name: eob_contained_type
+        identifier: "{{ var('forge_tables')['eob']['contained_type'] }}"
+      # ExplanationOfBenefit.contained.payor (Coverage.payor)
+      - name: eob_contained_payor
+        identifier: "{{ var('forge_tables')['eob']['contained_payor'] }}"
 

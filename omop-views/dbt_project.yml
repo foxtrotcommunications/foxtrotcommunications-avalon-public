@@ -51,6 +51,7 @@ vars:
       participant: "frg__root__raw_1__part1"
       part_indiv:  "frg__root__raw_1__part1__indi1"
       subject:     "frg__root__raw_1__subj1"
+      service_provider: "frg__root__raw_1__serv1"
       # Encounter.hospitalization — sparse (inpatient only); verify with discover_table_map.py
       hosp:                  "frg__root__raw_1__hosp1"
       hosp_admit_source:     "frg__root__raw_1__hosp1__admi1"
@@ -88,6 +89,9 @@ vars:
       dosage:              "frg__root__raw_1__dosa1"
       dosage_route:        "frg__root__raw_1__dosa1__rout1"
       dosage_route_coding: "frg__root__raw_1__dosa1__rout1__codi1"
+      dosage_dose_rate:    "frg__root__raw_1__dosa1__dose1"
+      dosage_dose_qty:     "frg__root__raw_1__dosa1__dose1__dose1"
+      requester:           "frg__root__raw_1__requ1"
     claim:
       raw:              "frg__root__raw_1"
       billable_period:  "frg__root__raw_1__bill1"
@@ -108,6 +112,15 @@ vars:
       total_amount:     "frg__root__raw_1__tota1__amou1"
       payment:          "frg__root__raw_1__paym1"
       payment_amount:   "frg__root__raw_1__paym1__amou1"
+      item:             "frg__root__raw_1__item1"
+      item_adjudication: "frg__root__raw_1__item1__adju1"
+      item_adj_amount:   "frg__root__raw_1__item1__adju1__amou1"
+      item_adj_category_coding: "frg__root__raw_1__item1__adju1__cate1__codi1"
+      item_encounter:    "frg__root__raw_1__item1__enco1"
+      billable_period:   "frg__root__raw_1__bill1"
+      contained:         "frg__root__raw_1__cont1"
+      contained_type:    "frg__root__raw_1__cont1__type1"
+      contained_payor:   "frg__root__raw_1__cont1__payo1"
 
 models:
   avalon_omop:

@@ -14,6 +14,7 @@ SELECT
   REPLACE(COALESCE(subj.reference, ''), 'urn:uuid:', '') AS patient_id,
   REPLACE(COALESCE(enc_ref.reference, ''), 'urn:uuid:', '') AS encounter_id,
   raw.onset_date_time AS effective_date,
+  raw.abatement_date_time,
   code_c.code AS code,
   code_c.display AS code_display,
   raw.clinical_status

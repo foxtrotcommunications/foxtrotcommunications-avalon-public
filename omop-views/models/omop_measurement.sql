@@ -8,7 +8,7 @@ SELECT
   {{ resolve_concept('code', 'LOINC') }} AS measurement_concept_id,
   SAFE.PARSE_DATE('%Y-%m-%d', SUBSTR(effective_date, 1, 10)) AS measurement_date,
   SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S', SUBSTR(effective_date, 1, 19)) AS measurement_datetime,
-  CAST(NULL AS STRING) AS measurement_time,
+  SUBSTR(effective_date, 12, 8) AS measurement_time,  -- HH:MM:SS from ISO datetime
   44818702 AS measurement_type_concept_id,
   0 AS operator_concept_id,
   SAFE_CAST(value_quantity AS FLOAT64) AS value_as_number,
