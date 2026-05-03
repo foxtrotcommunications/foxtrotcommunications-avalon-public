@@ -22,7 +22,9 @@ SELECT
   peri.start AS period_start,
   peri.`end` AS period_end,
   part_ind.reference AS participant_individual_reference,
-  part_ind.display AS participant_individual_display
+  part_ind.display AS participant_individual_display,
+  serv.reference AS service_provider_reference,
+  serv.display AS service_provider_display
   {% if var('enable_hospitalization', false) %}
   -- Hospitalization fields: only populated for inpatient encounters
   , admit_c.code    AS admit_source_code
@@ -44,7 +46,8 @@ FROM {{ source('forge_encounter', 'frg__root') }} r
 {{ forge_join('peri',     'forge_encounter', 'encounter_period',      'raw',  3) }}
 {{ forge_join('part',     'forge_encounter', 'encounter_participant', 'raw',  3) }}
 {{ forge_join('part_ind', 'forge_encounter', 'encounter_part_indiv',  'part', 4) }}
-{{ forge_join('subj',     'forge_encounter', 'encounter_subject',     'raw',  3) }}
+{{ forge_join('subj',     'forge_encounter', 'encounter_subject',          'raw',  3) }}
+{{ forge_join('serv',     'forge_encounter', 'encounter_service_provider', 'raw',  3) }}
 {% if var('enable_hospitalization', false) %}
 {{ forge_join('hosp',    'forge_encounter', 'encounter_hosp',         'raw',   3) }}
 {{ forge_join('admit',   'forge_encounter', 'encounter_admit_source', 'hosp',  4) }}

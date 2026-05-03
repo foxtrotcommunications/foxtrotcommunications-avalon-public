@@ -1,50 +1,73 @@
 {{ config(materialized='table') }}
 
 -- OMOP CDM 5.4 — COST
--- Maps forge-core Claim item-level costs → OMOP cost
--- Links to visit_occurrence, condition_occurrence, procedure_occurrence
--- via the claim's encounter reference
+-- Maps forge-core ExplanationOfBenefit item-level adjudication → OMOP cost
+-- Adjudication categories pivoted from CMS BlueButton codes:
+--   line_sbmtd_chrg_amt     → total_charge
+--   line_alowd_chrg_amt     → amount_allowed
+--   line_prvdr_pmt_amt      → total_paid / paid_by_payer
+--   line_coinsrnc_amt       → paid_patient_coinsurance
+--   line_bene_ptb_ddctbl_amt → paid_patient_deductible
+
+WITH eob_adjudication AS (
+  SELECT
+    r.ingestion_hash,
+    r.ingestion_timestamp,
+    REPLACE(COALESCE(pat.reference, ''), 'urn:uuid:', '') AS patient_id,
+    REPLACE(COALESCE(item_enc.reference, ''), 'urn:uuid:', '') AS encounter_id,
+    cat_c.code AS adjudication_category,
+    SAFE_CAST(adj_amt.value AS FLOAT64) AS adjudication_amount
+
+  FROM {{ source('forge_eob', 'frg__root') }} r
+
+  {{ forge_join('raw',       'forge_eob', 'eob_raw',                  'r',     2) }}
+  {{ forge_join('pat',       'forge_eob', 'eob_patient',              'raw',   3) }}
+  {{ forge_join('item',      'forge_eob', 'eob_item',                 'raw',   3) }}
+  {{ forge_join('item_enc',  'forge_eob', 'eob_item_encounter',       'item',  4) }}
+  {{ forge_join('adj',       'forge_eob', 'eob_item_adjudication',    'item',  4) }}
+  {{ forge_join('adj_amt',   'forge_eob', 'eob_item_adj_amount',      'adj',   5) }}
+  {{ forge_join('cat_c',     'forge_eob', 'eob_item_adj_category_coding', 'adj', 5) }}
+
+  WHERE adj_amt.value IS NOT NULL
+),
+
+pivoted AS (
+  SELECT
+    ingestion_hash,
+    encounter_id,
+    patient_id,
+    MAX(CASE WHEN adjudication_category LIKE '%line_sbmtd_chrg_amt%' THEN adjudication_amount END) AS total_charge,
+    MAX(CASE WHEN adjudication_category LIKE '%line_alowd_chrg_amt%' THEN adjudication_amount END) AS amount_allowed,
+    MAX(CASE WHEN adjudication_category LIKE '%line_prvdr_pmt_amt%' THEN adjudication_amount END) AS total_paid,
+    MAX(CASE WHEN adjudication_category LIKE '%line_coinsrnc_amt%' THEN adjudication_amount END) AS paid_patient_coinsurance,
+    MAX(CASE WHEN adjudication_category LIKE '%line_bene_ptb_ddctbl_amt%' THEN adjudication_amount END) AS paid_patient_deductible
+  FROM eob_adjudication
+  GROUP BY ingestion_hash, encounter_id, patient_id
+)
 
 SELECT
-  ROW_NUMBER() OVER (ORDER BY c.ingestion_hash, c.resource_id) AS cost_id,
-  ABS(FARM_FINGERPRINT(c.encounter_id)) AS cost_event_id,
+  ROW_NUMBER() OVER (ORDER BY p.ingestion_hash, p.encounter_id) AS cost_id,
+  ABS(FARM_FINGERPRINT(p.encounter_id)) AS cost_event_id,
   'Visit' AS cost_domain_id,
   31968 AS cost_type_concept_id,
   44818668 AS currency_concept_id,
-  SAFE_CAST(c.item_net_value AS FLOAT64) AS total_charge,
-
-  -- Payment from EOB (if available)
-  SAFE_CAST(eob.payment_amount AS FLOAT64) AS total_paid,
-
-  -- Payer amounts from EOB total
-  SAFE_CAST(eob.total_amount AS FLOAT64) AS paid_by_payer,
-  CAST(NULL AS FLOAT64) AS paid_by_patient,
-  CAST(NULL AS FLOAT64) AS paid_patient_copay,
-  CAST(NULL AS FLOAT64) AS paid_patient_coinsurance,
-  CAST(NULL AS FLOAT64) AS paid_patient_deductible,
+  p.total_charge,
+  p.total_paid,
+  p.total_paid AS paid_by_payer,
+  COALESCE(p.paid_patient_coinsurance, 0) + COALESCE(p.paid_patient_deductible, 0) AS paid_by_patient,
+  CAST(NULL AS FLOAT64) AS paid_patient_copay,  -- not in CMS BlueButton adjudication
+  p.paid_patient_coinsurance,
+  p.paid_patient_deductible,
   CAST(NULL AS FLOAT64) AS paid_by_primary,
   CAST(NULL AS FLOAT64) AS paid_ingredient_cost,
   CAST(NULL AS FLOAT64) AS paid_dispensing_fee,
   CAST(NULL AS INT64) AS payer_plan_period_id,
-  CAST(NULL AS FLOAT64) AS amount_allowed,
+  p.amount_allowed,
   0 AS revenue_code_concept_id,
   CAST(NULL AS STRING) AS revenue_code_source_value,
   0 AS drg_concept_id,
   CAST(NULL AS STRING) AS drg_source_value
 
-FROM {{ ref('stg_claim') }} c
-LEFT JOIN (
-  SELECT
-    patient_id,
-    total_amount,
-    payment_amount,
-    ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY ingestion_timestamp DESC) AS rn
-  FROM {{ ref('stg_explanation_of_benefit') }}
-) eob
-  ON eob.patient_id = c.patient_id
-  AND eob.rn = 1
-WHERE c.item_net_value IS NOT NULL
-QUALIFY ROW_NUMBER() OVER (
-  PARTITION BY c.patient_id, c.encounter_id, c.item_product_code
-  ORDER BY c.ingestion_timestamp DESC
-) = 1
+FROM pivoted p
+WHERE p.total_charge IS NOT NULL
+   OR p.total_paid IS NOT NULL
