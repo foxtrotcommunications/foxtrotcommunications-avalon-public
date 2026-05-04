@@ -45,7 +45,7 @@ COALESCE({{ join_alias }}.concept_id, {{ fallback }})
 {% if var('vocab_loaded', false) %}
 LEFT JOIN {{ source('omop_vocab', 'concept_map') }} {{ join_alias }}
   ON {{ join_alias }}.source_code = CAST({{ source_code_expr }} AS STRING)
-  AND {{ join_alias }}.source_vocabulary = '{{ vocabulary }}'
+  AND {{ join_alias }}.source_vocabulary_id = '{{ vocabulary }}'
 {%- endif %}
 {% endmacro %}
 
