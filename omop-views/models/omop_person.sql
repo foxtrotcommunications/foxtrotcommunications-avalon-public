@@ -34,6 +34,31 @@ patient_extensions AS (
     END) AS ethnicity_display
   FROM patient_latest
   GROUP BY patient_id
+),
+
+-- Derive primary provider: the provider each patient has seen most often.
+--
+-- OMOP CDM 5.4 defines person.provider_id as the "provider of primary care"
+-- (ref: https://ohdsi.github.io/CommonDataModel/cdm54.html#PERSON).
+-- Synthea Patient resources do not reliably include generalPractitioner, and
+-- this OMOP view has not yet mapped that field from the staging tables. Per
+-- OHDSI ETL conventions, "most frequent provider" is the standard fallback
+-- when the source data does not provide an explicit primary care provider.
+-- TODO: map Patient.generalPractitioner from stg_patient when available.
+primary_provider AS (
+  SELECT
+    person_id,
+    provider_id
+  FROM (
+    SELECT
+      person_id,
+      provider_id,
+      ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY COUNT(*) DESC) AS rn
+    FROM {{ ref('omop_visit_occurrence') }}
+    WHERE provider_id IS NOT NULL AND provider_id != 0
+    GROUP BY person_id, provider_id
+  )
+  WHERE rn = 1
 )
 
 SELECT
@@ -63,7 +88,7 @@ SELECT
     ELSE 0
   END AS ethnicity_concept_id,
   CAST(NULL AS INT64) AS location_id,
-  CAST(NULL AS INT64) AS provider_id,
+  pp.provider_id AS provider_id,
   CAST(NULL AS INT64) AS care_site_id,
   p.patient_id AS person_source_value,
   p.gender AS gender_source_value,
@@ -74,6 +99,7 @@ SELECT
   {{ resolve_source_concept('sc_eth', 0) }} AS ethnicity_source_concept_id
 FROM patient_latest p
 LEFT JOIN patient_extensions pe ON pe.patient_id = p.patient_id
+LEFT JOIN primary_provider pp ON pp.person_id = ABS(FARM_FINGERPRINT(p.patient_id))
 {{ resolve_source_join('sc_gender', 'p.gender', 'Gender') }}
 {{ resolve_source_join('sc_race', 'pe.race_code', 'Race') }}
 {{ resolve_source_join('sc_eth', 'pe.ethnicity_code', 'Ethnicity') }}
