@@ -21,7 +21,10 @@ vars:
   # OMOP Vocabulary (loaded by scripts/load_vocab.py)
   # Defaults to the same project as forge. Override if vocab lives elsewhere.
   omop_vocab_project: "forge-poc-452521"
-  omop_vocab_dataset: "omop_vocab"
+  omop_vocab_dataset: "omop_vocabulary"
+
+  # Vocabulary resolution — set to true after loading Athena vocab (via load_vocab.py or Analytics Hub)
+  vocab_loaded: true
 
   # Per-resource normalized datasets produced by forge-core
   forge_patient_dataset: "fhir_normalized_patient"
@@ -125,6 +128,8 @@ vars:
 models:
   avalon_omop:
     +materialized: table
-    +schema: omop
     staging:
       +materialized: view
+
+seeds:
+  avalon_omop: {}
