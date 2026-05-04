@@ -41,9 +41,11 @@ SELECT
   dp.death_date,
   dp.death_datetime,
   32510 AS death_type_concept_id,
-  {{ resolve_concept('cod.cause_snomed_code', 'SNOMED') }} AS cause_concept_id,
+  {{ resolve_concept('cm_cod', 0) }} AS cause_concept_id,
   cod.cause_display AS cause_source_value,
-  {{ resolve_source_concept('cod.cause_snomed_code', 'SNOMED') }} AS cause_source_concept_id
+  {{ resolve_source_concept('sc_cod', 0) }} AS cause_source_concept_id
 FROM deceased dp
 LEFT JOIN cause_of_death cod
   ON dp.patient_id = cod.patient_id AND cod.rn = 1
+{{ resolve_concept_join('cm_cod', 'cod.cause_snomed_code', 'SNOMED') }}
+{{ resolve_source_join('sc_cod', 'cod.cause_snomed_code', 'SNOMED') }}

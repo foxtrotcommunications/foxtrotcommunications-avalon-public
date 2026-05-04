@@ -1,65 +1,69 @@
-{% macro resolve_concept(source_code_col, vocabulary, fallback=0) %}
+{% macro resolve_concept(join_alias, fallback=0) %}
 {#
-  Resolve a FHIR source code to its OMOP Standard concept_id.
-
-  Joins against omop_vocab.concept_map, which is the pre-computed view
-  created by scripts/load_vocab.py:
-    source_code + source_vocabulary → standard_concept_id
-
+  Reference a pre-joined concept resolution result.
+  The join_alias must match a LEFT JOIN added via resolve_concept_join().
+  
   Args:
-    source_code_col : SQL expression for the source code column
-                      (e.g., 'cond.code', 'obs.code')
-    vocabulary      : Athena vocabulary_id string literal
-                      ('SNOMED', 'LOINC', 'RxNorm', 'UCUM')
-    fallback        : Value to use when no mapping exists (default: 0)
-
-  Prerequisites:
-    Run scripts/load_vocab.py first, then set vocab_loaded: true in
-    dbt_project.yml vars (or pass --vars '{"vocab_loaded": true}').
-    When vocab_loaded is false this macro returns the fallback value (0)
-    directly, identical to the pre-vocabulary baseline.
+    join_alias : The alias used in the LEFT JOIN (e.g., 'cm_snomed_code')
+    fallback   : Value to use when no mapping exists (default: 0)
 #}
 {% if var('vocab_loaded', false) %}
-COALESCE(
-  (
-    SELECT cm.standard_concept_id
-    FROM {{ source('omop_vocab', 'concept_map') }} cm
-    WHERE cm.source_code       = CAST({{ source_code_col }} AS STRING)
-      AND cm.source_vocabulary = '{{ vocabulary }}'
-    LIMIT 1
-  ),
-  {{ fallback }}
-)
-{% else %}
+COALESCE({{ join_alias }}.standard_concept_id, {{ fallback }})
+{%- else %}
 {{ fallback }}
-{% endif %}
+{%- endif %}
 {% endmacro %}
 
 
-{% macro resolve_source_concept(source_code_col, vocabulary, fallback=0) %}
+{% macro resolve_source_concept(join_alias, fallback=0) %}
 {#
-  Resolve a FHIR source code to its OMOP *source* concept_id
-  (the non-standard concept for the source vocabulary itself,
-  before "Maps to" resolution). Used to populate *_source_concept_id fields.
+  Reference a pre-joined source concept resolution result.
+  The join_alias must match a LEFT JOIN added via resolve_source_join().
 
   Args:
-    source_code_col : SQL expression for the source code column
-    vocabulary      : Athena vocabulary_id string literal
-    fallback        : Value when no concept found (default: 0)
+    join_alias : The alias used in the LEFT JOIN (e.g., 'sc_snomed_code')
+    fallback   : Value when no concept found (default: 0)
 #}
 {% if var('vocab_loaded', false) %}
-COALESCE(
-  (
-    SELECT c.concept_id
-    FROM {{ source('omop_vocab', 'concept') }} c
-    WHERE c.concept_code  = CAST({{ source_code_col }} AS STRING)
-      AND c.vocabulary_id = '{{ vocabulary }}'
-      AND c.invalid_reason IS NULL
-    LIMIT 1
-  ),
-  {{ fallback }}
-)
-{% else %}
+COALESCE({{ join_alias }}.concept_id, {{ fallback }})
+{%- else %}
 {{ fallback }}
-{% endif %}
+{%- endif %}
+{% endmacro %}
+
+
+{% macro resolve_concept_join(join_alias, source_code_expr, vocabulary) %}
+{#
+  Emit a LEFT JOIN against the concept_map table for standard concept resolution.
+  Add this in the FROM/JOIN section of your model.
+
+  Args:
+    join_alias       : Unique alias for this join (e.g., 'cm_snomed_code')
+    source_code_expr : SQL expression for the source code column (e.g., 'cond.code')
+    vocabulary       : Athena vocabulary_id ('SNOMED', 'LOINC', 'RxNorm', 'UCUM')
+#}
+{% if var('vocab_loaded', false) %}
+LEFT JOIN {{ source('omop_vocab', 'concept_map') }} {{ join_alias }}
+  ON {{ join_alias }}.source_code = CAST({{ source_code_expr }} AS STRING)
+  AND {{ join_alias }}.source_vocabulary_id = '{{ vocabulary }}'
+{%- endif %}
+{% endmacro %}
+
+
+{% macro resolve_source_join(join_alias, source_code_expr, vocabulary) %}
+{#
+  Emit a LEFT JOIN against the concept table for source concept resolution.
+  Add this in the FROM/JOIN section of your model.
+
+  Args:
+    join_alias       : Unique alias for this join (e.g., 'sc_snomed_code')
+    source_code_expr : SQL expression for the source code column
+    vocabulary       : Athena vocabulary_id
+#}
+{% if var('vocab_loaded', false) %}
+LEFT JOIN {{ source('omop_vocab', 'concept') }} {{ join_alias }}
+  ON {{ join_alias }}.concept_code = CAST({{ source_code_expr }} AS STRING)
+  AND {{ join_alias }}.vocabulary_id = '{{ vocabulary }}'
+  AND {{ join_alias }}.invalid_reason IS NULL
+{%- endif %}
 {% endmacro %}

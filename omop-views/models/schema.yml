@@ -18,6 +18,7 @@ models:
           - not_null
           - accepted_values:
               values: [8507, 8532, 44814653, 8551, 0]
+              quote: false
       - name: year_of_birth
         tests:
           - not_null
@@ -44,6 +45,7 @@ models:
           - not_null
           - accepted_values:
               values: [9201, 9202, 9203, 581399, 581476, 0]
+              quote: false
       - name: visit_start_date
         tests:
           - not_null
@@ -74,6 +76,7 @@ models:
     columns:
       - name: condition_occurrence_id
         tests:
+          - unique
           - not_null
       - name: person_id
         tests:
@@ -100,6 +103,7 @@ models:
     columns:
       - name: procedure_occurrence_id
         tests:
+          - unique
           - not_null
       - name: person_id
         tests:
@@ -120,6 +124,7 @@ models:
     columns:
       - name: drug_exposure_id
         tests:
+          - unique
           - not_null
       - name: person_id
         tests:
@@ -127,6 +132,11 @@ models:
           - relationships:
               to: ref('omop_person')
               field: person_id
+      - name: visit_occurrence_id
+        tests:
+          - relationships:
+              to: ref('omop_visit_occurrence')
+              field: visit_occurrence_id
       - name: drug_exposure_start_date
         tests:
           - not_null
@@ -139,6 +149,7 @@ models:
     columns:
       - name: measurement_id
         tests:
+          - unique
           - not_null
       - name: person_id
         tests:
@@ -146,6 +157,11 @@ models:
           - relationships:
               to: ref('omop_person')
               field: person_id
+      - name: visit_occurrence_id
+        tests:
+          - relationships:
+              to: ref('omop_visit_occurrence')
+              field: visit_occurrence_id
       - name: measurement_date
         tests:
           - not_null
@@ -159,6 +175,7 @@ models:
     columns:
       - name: observation_id
         tests:
+          - unique
           - not_null
       - name: person_id
         tests:
@@ -166,6 +183,11 @@ models:
           - relationships:
               to: ref('omop_person')
               field: person_id
+      - name: visit_occurrence_id
+        tests:
+          - relationships:
+              to: ref('omop_visit_occurrence')
+              field: visit_occurrence_id
       - name: observation_date
         tests:
           - not_null
@@ -192,8 +214,13 @@ models:
           - unique
           - not_null
       - name: cost_event_id
+        description: "References visit_occurrence_id when encounter_id is present (many EOB items lack encounter refs)"
         tests:
           - not_null
+          - relationships:
+              to: ref('omop_visit_occurrence')
+              field: visit_occurrence_id
+              severity: warn
       - name: total_charge
         tests:
           - not_null
@@ -294,5 +321,33 @@ models:
         tests:
           - not_null
       - name: med_code
+        description: "NULL when MedicationRequest lacks medicationCodeableConcept (filtered by omop_drug_exposure)"
+        tests:
+          - not_null:
+              severity: warn
+
+  - name: stg_claim
+    description: "Flattened Claim from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_explanation_of_benefit
+    description: "Flattened ExplanationOfBenefit from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
         tests:
           - not_null

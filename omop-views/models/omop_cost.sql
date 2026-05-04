@@ -9,12 +9,28 @@
 --   line_coinsrnc_amt       → paid_patient_coinsurance
 --   line_bene_ptb_ddctbl_amt → paid_patient_deductible
 
-WITH eob_adjudication AS (
+-- Resolve the single encounter per EOB. Item-level encounter refs only exist
+-- on clinical items (not the administrative items that carry adjudication amounts),
+-- so we grab the first non-null encounter reference per EOB (ingestion_hash).
+WITH eob_encounter AS (
+  SELECT
+    item_enc.ingestion_hash,
+    REPLACE(
+      MIN(item_enc.reference),   -- one encounter per EOB, MIN picks the non-null
+      'urn:uuid:', ''
+    ) AS encounter_id
+  FROM {{ source('forge_eob', 'eob_item_encounter') }} item_enc
+  WHERE item_enc.reference IS NOT NULL
+    AND item_enc.reference != ''
+  GROUP BY item_enc.ingestion_hash
+),
+
+eob_adjudication AS (
   SELECT
     r.ingestion_hash,
     r.ingestion_timestamp,
     REPLACE(COALESCE(pat.reference, ''), 'urn:uuid:', '') AS patient_id,
-    REPLACE(COALESCE(item_enc.reference, ''), 'urn:uuid:', '') AS encounter_id,
+    COALESCE(eob_enc.encounter_id, '') AS encounter_id,
     cat_c.code AS adjudication_category,
     SAFE_CAST(adj_amt.value AS FLOAT64) AS adjudication_amount
 
@@ -23,10 +39,11 @@ WITH eob_adjudication AS (
   {{ forge_join('raw',       'forge_eob', 'eob_raw',                  'r',     2) }}
   {{ forge_join('pat',       'forge_eob', 'eob_patient',              'raw',   3) }}
   {{ forge_join('item',      'forge_eob', 'eob_item',                 'raw',   3) }}
-  {{ forge_join('item_enc',  'forge_eob', 'eob_item_encounter',       'item',  4) }}
   {{ forge_join('adj',       'forge_eob', 'eob_item_adjudication',    'item',  4) }}
   {{ forge_join('adj_amt',   'forge_eob', 'eob_item_adj_amount',      'adj',   5) }}
   {{ forge_join('cat_c',     'forge_eob', 'eob_item_adj_category_coding', 'adj', 5) }}
+  LEFT JOIN eob_encounter eob_enc
+    ON eob_enc.ingestion_hash = r.ingestion_hash
 
   WHERE adj_amt.value IS NOT NULL
 ),
