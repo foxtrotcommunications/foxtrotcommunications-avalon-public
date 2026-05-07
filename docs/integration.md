@@ -62,8 +62,8 @@ Avalon communicates with Forge services via HTTP APIs:
 |------------|-----|---------|
 | Trigger normalization | `POST /run_job` | Start a Forge normalization job |
 | Pub/Sub trigger | `POST /pubsub/push` | Async job trigger via Cloud Pub/Sub |
-| Run Synthea pipeline | `POST /fhir/run-synthea` | Generate synthetic data (sandbox) |
-| NL translation | `POST /generate` | Gemini-powered natural language processing |
+| Run Synthea pipeline | `POST /v2/projects/.../jobs/...:run` | Dispatch wave orchestration via Cloud Run Jobs API |
+| NL translation | `POST /generate` | Merlin service for Gemini-powered NL-to-SQL |
 
 ---
 

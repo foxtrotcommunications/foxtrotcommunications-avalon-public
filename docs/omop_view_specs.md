@@ -154,9 +154,9 @@ Maps deceased FHIR `Patient` resources to OMOP [DEATH](https://ohdsi.github.io/C
 |----------------|-----------------|--------|
 | Gender (male/female) | OMOP Gender (8507/8532) | ✅ Mapped |
 | Visit class (AMB/IMP/EMER) | OMOP Visit (9201/9202/9203) | ✅ Mapped |
-| SNOMED CT (conditions, procedures) | OMOP Standard Concepts | 🔜 In progress |
-| LOINC (measurements) | OMOP Standard Concepts | 🔜 In progress |
-| RxNorm (drugs) | OMOP Standard Concepts | 🔜 In progress |
+| SNOMED CT (conditions, procedures) | OMOP Standard Concepts | ✅ Mapped |
+| LOINC (measurements) | OMOP Standard Concepts | ✅ Mapped |
+| RxNorm (drugs) | OMOP Standard Concepts | ✅ Mapped |
 | CVX (immunizations) | OMOP Standard Concepts | 🔜 Planned |
 
 ---
