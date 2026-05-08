@@ -119,4 +119,3 @@ LEFT JOIN patient_address pa ON pa.patient_id = p.patient_id
 {{ resolve_source_join('sc_gender', 'p.gender', 'Gender') }}
 {{ resolve_source_join('sc_race', 'pe.race_code', 'Race') }}
 {{ resolve_source_join('sc_eth', 'pe.ethnicity_code', 'Ethnicity') }}
-
