@@ -59,6 +59,18 @@ primary_provider AS (
     GROUP BY person_id, provider_id
   )
   WHERE rn = 1
+),
+
+-- Patient address: pick most recent address per patient for location_id linkage.
+-- Uses the same deterministic FARM_FINGERPRINT as omop_location so IDs match.
+patient_address AS (
+  SELECT
+    patient_id,
+    city,
+    state,
+    postal_code
+  FROM {{ ref('stg_patient_address') }}
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY ingestion_timestamp DESC) = 1
 )
 
 SELECT
@@ -87,7 +99,10 @@ SELECT
     WHEN '2186-5' THEN 38003564
     ELSE 0
   END AS ethnicity_concept_id,
-  CAST(NULL AS INT64) AS location_id,
+  CASE
+    WHEN pa.city IS NULL AND pa.state IS NULL THEN CAST(NULL AS INT64)
+    ELSE ABS(FARM_FINGERPRINT(CONCAT(IFNULL(pa.city, ''), '|', IFNULL(pa.state, ''), '|', IFNULL(pa.postal_code, ''))))
+  END AS location_id,
   pp.provider_id AS provider_id,
   CAST(NULL AS INT64) AS care_site_id,
   p.patient_id AS person_source_value,
@@ -100,6 +115,8 @@ SELECT
 FROM patient_latest p
 LEFT JOIN patient_extensions pe ON pe.patient_id = p.patient_id
 LEFT JOIN primary_provider pp ON pp.person_id = ABS(FARM_FINGERPRINT(p.patient_id))
+LEFT JOIN patient_address pa ON pa.patient_id = p.patient_id
 {{ resolve_source_join('sc_gender', 'p.gender', 'Gender') }}
 {{ resolve_source_join('sc_race', 'pe.race_code', 'Race') }}
 {{ resolve_source_join('sc_eth', 'pe.ethnicity_code', 'Ethnicity') }}
+

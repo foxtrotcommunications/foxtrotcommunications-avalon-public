@@ -28,6 +28,8 @@ sources:
         identifier: "{{ var('forge_tables')['patient']['ext_ext'] }}"
       - name: patient_ext_ext_val
         identifier: "{{ var('forge_tables')['patient']['ext_ext_val'] }}"
+      - name: patient_address
+        identifier: "{{ var('forge_tables')['patient']['address'] }}"
 
   - name: forge_encounter
     database: "{{ var('forge_project') }}"

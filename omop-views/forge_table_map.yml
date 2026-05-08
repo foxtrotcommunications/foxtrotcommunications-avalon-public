@@ -19,6 +19,7 @@ forge_tables:
     extension:     "frg__root__raw_1__exte1"
     ext_ext:       "frg__root__raw_1__exte1__exte1"
     ext_ext_val:   "frg__root__raw_1__exte1__exte1__valu1"
+    address:       "frg__root__raw_1__addr1"
   encounter:
     raw:           "frg__root__raw_1"
     class:         "frg__root__raw_1__clas1"
