@@ -27,6 +27,19 @@ models:
         tests:
           - not_null
 
+  - name: omop_location
+    description: "OMOP CDM 5.4 LOCATION — one row per unique city/state/zip"
+    columns:
+      - name: location_id
+        description: "Deterministic ID via ABS(FARM_FINGERPRINT(city|state|zip))"
+        tests:
+          - unique
+          - not_null
+      - name: state
+        description: "2-letter US state abbreviation"
+      - name: city
+      - name: zip
+
   - name: omop_visit_occurrence
     description: "OMOP CDM 5.4 VISIT_OCCURRENCE — one row per encounter"
     columns:
@@ -251,6 +264,16 @@ models:
 
   - name: stg_patient
     description: "Flattened Patient from forge-core sub-tables"
+    columns:
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_patient_address
+    description: "Flattened Patient.address from forge-core sub-tables with geolocation"
     columns:
       - name: patient_id
         tests:
