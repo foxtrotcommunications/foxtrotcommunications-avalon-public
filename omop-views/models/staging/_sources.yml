@@ -154,6 +154,23 @@ sources:
       - name: med_request_dosage_dose_qty
         identifier: "{{ var('forge_tables')['medication_request']['dosage_dose_qty'] }}"
 
+  - name: forge_immunization
+    database: "{{ var('forge_project') }}"
+    schema: "{{ var('forge_immunization_dataset') }}"
+    tables:
+      - name: frg__root
+        identifier: frg__root
+      - name: immunization_raw
+        identifier: "{{ var('forge_tables')['immunization']['raw'] }}"
+      - name: immunization_vaccine_code
+        identifier: "{{ var('forge_tables')['immunization']['vaccine_code'] }}"
+      - name: immunization_vaccine_coding
+        identifier: "{{ var('forge_tables')['immunization']['vaccine_coding'] }}"
+      - name: immunization_patient
+        identifier: "{{ var('forge_tables')['immunization']['patient'] }}"
+      - name: immunization_encounter
+        identifier: "{{ var('forge_tables')['immunization']['encounter'] }}"
+
   - name: forge_claim
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_claim_dataset') }}"
