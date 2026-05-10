@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Encounter from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → encounter_raw (3) → encounter_class (4)
+--   root__root (2) → encounter_raw (3) → encounter_class (4)
 --                                      → encounter_period (4)
 --                                      → encounter_participant (4) → encounter_part_indiv (5)
 --                                      → encounter_subject (4)
@@ -39,7 +39,7 @@ SELECT
   , CAST(NULL AS STRING) AS discharge_disposition_system
   {% endif %}
 
-FROM {{ source('forge_encounter', 'frg__root') }} r
+FROM {{ source('forge_encounter', 'root__root') }} r
 
 {{ forge_join('raw',      'forge_encounter', 'encounter_raw',         'r',    2) }}
 {{ forge_join('cls',      'forge_encounter', 'encounter_class',       'raw',  3) }}

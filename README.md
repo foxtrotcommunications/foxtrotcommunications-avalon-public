@@ -15,7 +15,7 @@ This is the **open source analytics layer** for the Avalon platform. It contains
 
 | Component | What It Does | Path |
 |-----------|-------------|------|
-| **OMOP dbt Models** | 9 OMOP CDM 5.4 tables built on forge-core `frg__` tables | [`omop-views/`](omop-views/) |
+| **OMOP dbt Models** | 9 OMOP CDM 5.4 tables built on forge-core `root__` tables | [`omop-views/`](omop-views/) |
 | **Analytics Packages** | Plug-and-play analytics (HRRP, etc.) with SQL + viz specs | [`packages/`](packages/) |
 | **Forge Table Contract** | Machine-readable schema defining the forge-core → OMOP interface | [`forge-table-contract/`](forge-table-contract/) |
 
@@ -29,11 +29,11 @@ This is the **open source analytics layer** for the Avalon platform. It contains
        ▼
   ┌──────────────────────┐
   │  forge-core (OSS)    │  JSON → relational decomposition
-  │  github.com/foxtrot  │  Produces frg__root, frg__root__raw_1, etc.
+  │  github.com/foxtrot  │  Produces root__root, root__root__raw_1, etc.
   │  communications/     │
   │  forge-core          │
   └──────────┬───────────┘
-             │ frg__ tables (per-resource datasets)
+             │ root__ tables (per-resource datasets)
              ▼
   ┌──────────────────────┐
   │  THIS REPO (OSS)     │  dbt models: staging → OMOP tables
@@ -81,17 +81,17 @@ Browse `packages/` for available analytics. Each package has a `manifest.json` d
 
 | Model | OMOP Table | Forge Source Tables |
 |-------|------------|---------------------|
-| `omop_person` | PERSON | `frg__root__raw_1`, extension sub-tables |
-| `omop_visit_occurrence` | VISIT_OCCURRENCE | `frg__root__raw_1`, class/period/participant |
+| `omop_person` | PERSON | `root__root__raw_1`, extension sub-tables |
+| `omop_visit_occurrence` | VISIT_OCCURRENCE | `root__root__raw_1`, class/period/participant |
 | `omop_observation_period` | OBSERVATION_PERIOD | (aggregated from encounters) |
-| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `frg__root__raw_1`, code/subject/encounter |
-| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `frg__root__raw_1`, code/perf/subject |
-| `omop_drug_exposure` | DRUG_EXPOSURE | `frg__root__raw_1`, medication coding |
-| `omop_measurement` | MEASUREMENT | `frg__root__raw_1`, code/value |
-| `omop_observation` | OBSERVATION | `frg__root__raw_1`, code/value |
+| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `root__root__raw_1`, code/subject/encounter |
+| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `root__root__raw_1`, code/perf/subject |
+| `omop_drug_exposure` | DRUG_EXPOSURE | `root__root__raw_1`, medication coding |
+| `omop_measurement` | MEASUREMENT | `root__root__raw_1`, code/value |
+| `omop_observation` | OBSERVATION | `root__root__raw_1`, code/value |
 | `omop_death` | DEATH | patient deceased + same-day conditions |
 
-All models pull data exclusively from forge-core's child sub-tables (`frg__root__raw_1` and descendants). `frg__root` is used only as the ingestion anchor for deduplication.
+All models pull data exclusively from forge-core's child sub-tables (`root__root__raw_1` and descendants). `root__root` is used only as the ingestion anchor for deduplication.
 
 For full specifications, see [docs/omop_view_specs.md](docs/omop_view_specs.md).
 
@@ -117,7 +117,7 @@ avalon-public/
 │   ├── dbt_project.yml               # Config with forge dataset vars
 │   ├── macros/forge_join.sql          # Reusable idx segment matching
 │   └── models/
-│       ├── staging/                   # Views joining frg__ sub-tables
+│       ├── staging/                   # Views joining root__ sub-tables
 │       │   ├── _sources.yml           # Source definitions
 │       │   ├── stg_patient.sql
 │       │   ├── stg_encounter.sql

@@ -8,16 +8,16 @@ OMOP CDM 5.4 models built directly on [forge-core](https://github.com/foxtrotcom
 forge-core (dbt)              this package (dbt)
 ─────────────────             ──────────────────
 FHIR JSON                     staging/
-  → frg__root                   stg_patient.sql ──→ omop_person
-  → frg__root__raw_1            stg_encounter.sql ─→ omop_visit_occurrence
-  → frg__root__raw_1__clas1     stg_condition.sql ─→ omop_condition_occurrence
-  → frg__root__raw_1__peri1     stg_procedure.sql ─→ omop_procedure_occurrence
+  → root__root                   stg_patient.sql ──→ omop_person
+  → root__root__raw_1            stg_encounter.sql ─→ omop_visit_occurrence
+  → root__root__raw_1__clas1     stg_condition.sql ─→ omop_condition_occurrence
+  → root__root__raw_1__peri1     stg_procedure.sql ─→ omop_procedure_occurrence
   → ...                         stg_observation.sql → omop_measurement
                                                       omop_observation
                                 stg_medication_request.sql → omop_drug_exposure
 ```
 
-Staging models are **views** that join forge-core's sub-tables (the `frg__` tables) into flat, queryable shapes. OMOP models are **materialized tables** that map those shapes to the OMOP CDM 5.4 schema.
+Staging models are **views** that join forge-core's sub-tables (the `root__` tables) into flat, queryable shapes. OMOP models are **materialized tables** that map those shapes to the OMOP CDM 5.4 schema.
 
 ## Prerequisites
 
@@ -105,14 +105,14 @@ vars:
 
 | Model | OMOP Table | Source Staging | forge-core Tables |
 |-------|------------|---------------|-------------------|
-| `omop_person` | PERSON | `stg_patient` | `frg__root`, `frg__root__raw_1`, extension sub-tables |
-| `omop_visit_occurrence` | VISIT_OCCURRENCE | `stg_encounter` | `frg__root`, class/period/participant sub-tables |
+| `omop_person` | PERSON | `stg_patient` | `root__root`, `root__root__raw_1`, extension sub-tables |
+| `omop_visit_occurrence` | VISIT_OCCURRENCE | `stg_encounter` | `root__root`, class/period/participant sub-tables |
 | `omop_observation_period` | OBSERVATION_PERIOD | `stg_encounter` | (aggregated from encounters) |
-| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `stg_condition` | `frg__root`, `frg__root__raw_1` |
-| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `stg_procedure` | `frg__root`, `frg__root__raw_1`, perf sub-table |
-| `omop_drug_exposure` | DRUG_EXPOSURE | `stg_medication_request` | `frg__root`, medication coding sub-tables |
-| `omop_measurement` | MEASUREMENT | `stg_observation` | `frg__root` (numeric only) |
-| `omop_observation` | OBSERVATION | `stg_observation` | `frg__root` (non-numeric only) |
+| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `stg_condition` | `root__root`, `root__root__raw_1` |
+| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `stg_procedure` | `root__root`, `root__root__raw_1`, perf sub-table |
+| `omop_drug_exposure` | DRUG_EXPOSURE | `stg_medication_request` | `root__root`, medication coding sub-tables |
+| `omop_measurement` | MEASUREMENT | `stg_observation` | `root__root` (numeric only) |
+| `omop_observation` | OBSERVATION | `stg_observation` | `root__root` (non-numeric only) |
 | `omop_death` | DEATH | `stg_patient` + `stg_condition` | patient deceased + same-day conditions |
 
 ## The `forge_join` Macro
@@ -120,7 +120,7 @@ vars:
 All staging models use the `forge_join` macro to join forge-core sub-tables:
 
 ```sql
-{{ forge_join('raw', 'forge_patient', 'frg__root__raw_1', 'r', 'frg__root') }}
+{{ forge_join('raw', 'forge_patient', 'root__root__raw_1', 'r', 'root__root') }}
 ```
 
 This generates the positional `idx` segment matching that forge-core uses to link parent → child tables. See `macros/forge_join.sql` for details.

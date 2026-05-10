@@ -15,15 +15,15 @@ The `contract.json` file specifies exactly which forge-core sub-tables and colum
 When forge-core processes FHIR JSON, it decomposes nested structures into a tree of relational tables:
 
 ```
-frg__root                          ← ingestion metadata (hash, timestamp, idx)
-└── frg__root__raw_1               ← first-level FHIR fields (id, status, etc.)
-    ├── frg__root__raw_1__code1    ← CodeableConcept
+root__root                          ← ingestion metadata (hash, timestamp, idx)
+└── root__root__raw_1               ← first-level FHIR fields (id, status, etc.)
+    ├── root__root__raw_1__code1    ← CodeableConcept
     │   └── code1__codi1           ← Coding[] array items (code, display, system)
-    ├── frg__root__raw_1__subj1    ← subject reference
-    ├── frg__root__raw_1__enco1    ← encounter reference
-    ├── frg__root__raw_1__valu1    ← valueQuantity
-    ├── frg__root__raw_1__peri1    ← period (start, end)
-    ├── frg__root__raw_1__exte1    ← extensions
+    ├── root__root__raw_1__subj1    ← subject reference
+    ├── root__root__raw_1__enco1    ← encounter reference
+    ├── root__root__raw_1__valu1    ← valueQuantity
+    ├── root__root__raw_1__peri1    ← period (start, end)
+    ├── root__root__raw_1__exte1    ← extensions
     │   └── exte1__exte1           ← nested extensions
     │       └── exte1__valu1       ← extension values
     └── ...
@@ -56,7 +56,7 @@ Sub-tables are joined using the `idx` column — a positional segment-based key:
 -- Child has N+1 segments (e.g., "1_1_1" = 3 segments)
 -- Join: match first N segments positionally
 
-LEFT JOIN frg__root__raw_1 raw
+LEFT JOIN root__root__raw_1 raw
   ON raw.ingestion_hash = r.ingestion_hash
   AND SPLIT(raw.idx, '_')[SAFE_OFFSET(0)] = SPLIT(r.idx, '_')[SAFE_OFFSET(0)]
   AND SPLIT(raw.idx, '_')[SAFE_OFFSET(1)] = SPLIT(r.idx, '_')[SAFE_OFFSET(1)]

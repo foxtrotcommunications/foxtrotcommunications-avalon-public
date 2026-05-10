@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Procedure from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → procedure_raw (3) → procedure_code (4) → procedure_code_coding (5)
+--   root__root (2) → procedure_raw (3) → procedure_code (4) → procedure_code_coding (5)
 --                                      → procedure_performed (4)
 --                                      → procedure_subject (4)
 --                                      → procedure_encounter (4)
@@ -20,7 +20,7 @@ SELECT
   perf.start AS performed_start,
   perf.`end` AS performed_end
 
-FROM {{ source('forge_procedure', 'frg__root') }} r
+FROM {{ source('forge_procedure', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_procedure', 'procedure_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_procedure', 'procedure_code',         'raw',    3) }}

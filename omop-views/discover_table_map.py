@@ -42,56 +42,56 @@ RESOURCE_DATASETS = {
 # Maps: semantic_key → expected table_path value
 REQUIRED_PATHS = {
     "patient": {
-        "raw": "frg__root",
-        "extension": "frg__root__extension",
-        "extension.extension": "frg__root__extension__extension",
-        "extension.extension.valueCoding": "frg__root__extension__extension__valueCoding",
+        "raw": "root__root",
+        "extension": "root__root__extension",
+        "extension.extension": "root__root__extension__extension",
+        "extension.extension.valueCoding": "root__root__extension__extension__valueCoding",
     },
     "encounter": {
-        "raw": "frg__root",
-        "class": "frg__root__class",
-        "period": "frg__root__period",
-        "participant": "frg__root__participant",
-        "participant.individual": "frg__root__participant__individual",
-        "subject": "frg__root__subject",
-        "hospitalization": "frg__root__hospitalization",
-        "hospitalization.admitSource": "frg__root__hospitalization__admitSource",
-        "hospitalization.admitSource.coding": "frg__root__hospitalization__admitSource__coding",
-        "hospitalization.dischargeDisposition": "frg__root__hospitalization__dischargeDisposition",
-        "hospitalization.dischargeDisposition.coding": "frg__root__hospitalization__dischargeDisposition__coding",
+        "raw": "root__root",
+        "class": "root__root__class",
+        "period": "root__root__period",
+        "participant": "root__root__participant",
+        "participant.individual": "root__root__participant__individual",
+        "subject": "root__root__subject",
+        "hospitalization": "root__root__hospitalization",
+        "hospitalization.admitSource": "root__root__hospitalization__admitSource",
+        "hospitalization.admitSource.coding": "root__root__hospitalization__admitSource__coding",
+        "hospitalization.dischargeDisposition": "root__root__hospitalization__dischargeDisposition",
+        "hospitalization.dischargeDisposition.coding": "root__root__hospitalization__dischargeDisposition__coding",
     },
     "condition": {
-        "raw": "frg__root",
-        "code": "frg__root__code",
-        "code.coding": "frg__root__code__coding",
-        "subject": "frg__root__subject",
-        "encounter": "frg__root__encounter",
+        "raw": "root__root",
+        "code": "root__root__code",
+        "code.coding": "root__root__code__coding",
+        "subject": "root__root__subject",
+        "encounter": "root__root__encounter",
     },
     "procedure": {
-        "raw": "frg__root",
-        "code": "frg__root__code",
-        "code.coding": "frg__root__code__coding",
-        "performedPeriod": "frg__root__performedPeriod",
-        "subject": "frg__root__subject",
-        "encounter": "frg__root__encounter",
+        "raw": "root__root",
+        "code": "root__root__code",
+        "code.coding": "root__root__code__coding",
+        "performedPeriod": "root__root__performedPeriod",
+        "subject": "root__root__subject",
+        "encounter": "root__root__encounter",
     },
     "observation": {
-        "raw": "frg__root",
-        "code": "frg__root__code",
-        "code.coding": "frg__root__code__coding",
-        "valueQuantity": "frg__root__valueQuantity",
-        "subject": "frg__root__subject",
-        "encounter": "frg__root__encounter",
+        "raw": "root__root",
+        "code": "root__root__code",
+        "code.coding": "root__root__code__coding",
+        "valueQuantity": "root__root__valueQuantity",
+        "subject": "root__root__subject",
+        "encounter": "root__root__encounter",
     },
     "medication_request": {
-        "raw": "frg__root",
-        "medicationCodeableConcept": "frg__root__medicationCodeableConcept",
-        "medicationCodeableConcept.coding": "frg__root__medicationCodeableConcept__coding",
-        "subject": "frg__root__subject",
-        "encounter": "frg__root__encounter",
-        "dosageInstruction": "frg__root__dosageInstruction",
-        "dosageInstruction.route": "frg__root__dosageInstruction__route",
-        "dosageInstruction.route.coding": "frg__root__dosageInstruction__route__coding",
+        "raw": "root__root",
+        "medicationCodeableConcept": "root__root__medicationCodeableConcept",
+        "medicationCodeableConcept.coding": "root__root__medicationCodeableConcept__coding",
+        "subject": "root__root__subject",
+        "encounter": "root__root__encounter",
+        "dosageInstruction": "root__root__dosageInstruction",
+        "dosageInstruction.route": "root__root__dosageInstruction__route",
+        "dosageInstruction.route.coding": "root__root__dosageInstruction__route__coding",
     },
 }
 
@@ -136,7 +136,7 @@ def discover_table_map(
 
         # For each table that has a table_path column, read its value
         for table_name in table_names:
-            if not table_name.startswith("frg__"):
+            if not table_name.startswith("root__"):
                 continue
 
             try:
@@ -153,10 +153,10 @@ def discover_table_map(
                     resource_map[table_path] = table_name
                     logger.info(f"  {table_path} → {table_name}")
             except Exception as e:
-                # frg__root won't have table_path as a queryable value
+                # root__root won't have table_path as a queryable value
                 # in the same way — handle gracefully
-                if table_name == "frg__root":
-                    resource_map["frg"] = "frg__root"
+                if table_name == "root__root":
+                    resource_map["frg"] = "root__root"
                 else:
                     logger.debug(f"  Could not read table_path from {table_name}: {e}")
 
@@ -167,15 +167,15 @@ def discover_table_map(
         for semantic_key, expected_path in required.items():
             if semantic_key == "raw":
                 # raw_1 is always the first child of root
-                # Find the table whose path is frg__root
+                # Find the table whose path is root__root
                 candidates = [
                     tn for tn in table_names
-                    if tn.startswith("frg__root__") and tn.count("__") == 2
+                    if tn.startswith("root__root__") and tn.count("__") == 2
                 ]
                 if candidates:
                     resolved[semantic_key] = candidates[0]
                 else:
-                    resolved[semantic_key] = "frg__root__raw_1"  # default
+                    resolved[semantic_key] = "root__root__raw_1"  # default
             elif expected_path in resource_map:
                 resolved[semantic_key] = resource_map[expected_path]
             else:

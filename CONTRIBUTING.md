@@ -58,7 +58,7 @@ See `packages/hrrp-readmission-penalty/` as a reference implementation.
 
 1. **Staging models** go in `omop-views/models/staging/` and are materialized as views
 2. **OMOP models** go in `omop-views/models/` and are materialized as tables
-3. All data must come from forge-core child tables (`frg__root__raw_1` and descendants) — never from `frg__root` scalar fields
+3. All data must come from forge-core child tables (`root__root__raw_1` and descendants) — never from `root__root` scalar fields
 4. Use the `forge_join` macro for all sub-table joins
 5. Update `_sources.yml` with any new source tables
 
