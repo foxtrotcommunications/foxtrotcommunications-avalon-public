@@ -96,6 +96,12 @@ vars:
       dosage_dose_rate:    "frg__root__raw_1__dosa1__dose1"
       dosage_dose_qty:     "frg__root__raw_1__dosa1__dose1__dose1"
       requester:           "frg__root__raw_1__requ1"
+    immunization:
+      raw:           "frg__root__raw_1"
+      vaccine_code:  "frg__root__raw_1__vacc1"
+      vaccine_coding: "frg__root__raw_1__vacc1__codi1"
+      patient:       "frg__root__raw_1__pati1"
+      encounter:     "frg__root__raw_1__enco1"
     claim:
       raw:              "frg__root__raw_1"
       billable_period:  "frg__root__raw_1__bill1"

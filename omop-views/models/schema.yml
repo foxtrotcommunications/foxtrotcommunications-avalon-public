@@ -374,3 +374,81 @@ models:
       - name: ingestion_hash
         tests:
           - not_null
+
+  # ─── New OMOP Tables ──────────────────────────────────────
+
+  - name: omop_cdm_source
+    description: "OMOP CDM 5.4 CDM_SOURCE table — required metadata row"
+    columns:
+      - name: cdm_source_name
+        tests:
+          - not_null
+
+  - name: omop_provider
+    description: "OMOP CDM 5.4 PROVIDER table — derived from encounter participants and med request requesters"
+    columns:
+      - name: provider_id
+        tests:
+          - unique
+          - not_null
+      - name: provider_source_value
+        tests:
+          - not_null
+
+  - name: omop_care_site
+    description: "OMOP CDM 5.4 CARE_SITE table — derived from encounter service provider references"
+    columns:
+      - name: care_site_id
+        tests:
+          - unique
+          - not_null
+      - name: care_site_name
+        tests:
+          - not_null
+
+  - name: omop_condition_era
+    description: "OMOP CDM 5.4 CONDITION_ERA table — derived from condition_occurrence with 30-day persistence window"
+    columns:
+      - name: condition_era_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+      - name: condition_concept_id
+        tests:
+          - not_null
+      - name: condition_era_start_date
+        tests:
+          - not_null
+
+  - name: omop_drug_era
+    description: "OMOP CDM 5.4 DRUG_ERA table — derived from drug_exposure with 30-day persistence window"
+    columns:
+      - name: drug_era_id
+        tests:
+          - unique
+          - not_null
+      - name: person_id
+        tests:
+          - not_null
+      - name: drug_concept_id
+        tests:
+          - not_null
+      - name: drug_era_start_date
+        tests:
+          - not_null
+
+  - name: stg_immunization
+    description: "Flattened Immunization from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: vaccine_code
+        tests:
+          - not_null
