@@ -21,7 +21,7 @@ WITH address_raw AS (
     addr.country,
     addr.line AS address_line,
     addr.extension AS geo_extension
-  FROM {{ source('forge_patient', 'root') }} r
+  FROM {{ source('forge_patient', 'root__root') }} r
   {{ forge_join('raw',  'forge_patient', 'patient_raw',     'r',   2) }}
   {{ forge_join('addr', 'forge_patient', 'patient_address', 'raw', 3) }}
   WHERE addr.city IS NOT NULL OR addr.state IS NOT NULL

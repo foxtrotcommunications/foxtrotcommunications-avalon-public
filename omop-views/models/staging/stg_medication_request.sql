@@ -40,7 +40,7 @@ SELECT
   -- Dosage dose quantity
   , dose_qty.value AS dose_quantity_value
 
-FROM {{ source('forge_medication_request', 'root') }} r
+FROM {{ source('forge_medication_request', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_medication_request', 'med_request_raw',         'r',   2) }}
 {{ forge_join('med',     'forge_medication_request', 'med_request_med_concept', 'raw', 3) }}

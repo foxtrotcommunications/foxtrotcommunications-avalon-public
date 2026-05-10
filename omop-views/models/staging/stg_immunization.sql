@@ -24,7 +24,7 @@ SELECT
   vacc_c.system  AS vaccine_system,
   raw.primary_source
 
-FROM {{ source('forge_immunization', 'root') }} r
+FROM {{ source('forge_immunization', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_immunization', 'immunization_raw',            'r',   2) }}
 {{ forge_join('vacc',    'forge_immunization', 'immunization_vaccine_code',   'raw', 3) }}

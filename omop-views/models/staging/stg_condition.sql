@@ -19,7 +19,7 @@ SELECT
   code_c.display AS code_display,
   raw.clinical_status
 
-FROM {{ source('forge_condition', 'root') }} r
+FROM {{ source('forge_condition', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_condition', 'condition_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_condition', 'condition_code',         'raw',    3) }}

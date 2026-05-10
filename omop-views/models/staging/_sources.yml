@@ -18,8 +18,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_patient_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: patient_raw
         identifier: "{{ var('forge_tables')['patient']['raw'] }}"
       - name: patient_extension
@@ -35,8 +35,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_encounter_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: encounter_raw
         identifier: "{{ var('forge_tables')['encounter']['raw'] }}"
       - name: encounter_class
@@ -68,8 +68,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_condition_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: condition_raw
         identifier: "{{ var('forge_tables')['condition']['raw'] }}"
       - name: condition_code
@@ -85,8 +85,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_procedure_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: procedure_raw
         identifier: "{{ var('forge_tables')['procedure']['raw'] }}"
       - name: procedure_code
@@ -104,8 +104,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_observation_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: observation_raw
         identifier: "{{ var('forge_tables')['observation']['raw'] }}"
       - name: observation_code
@@ -125,8 +125,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_medication_request_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: med_request_raw
         identifier: "{{ var('forge_tables')['medication_request']['raw'] }}"
       - name: med_request_med_concept
@@ -158,8 +158,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_immunization_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: immunization_raw
         identifier: "{{ var('forge_tables')['immunization']['raw'] }}"
       - name: immunization_vaccine_code
@@ -175,8 +175,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_claim_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: claim_raw
         identifier: "{{ var('forge_tables')['claim']['raw'] }}"
       - name: claim_billable_period
@@ -204,8 +204,8 @@ sources:
     database: "{{ var('forge_project') }}"
     schema: "{{ var('forge_eob_dataset') }}"
     tables:
-      - name: root
-        identifier: root
+      - name: root__root
+        identifier: root__root
       - name: eob_raw
         identifier: "{{ var('forge_tables')['eob']['raw'] }}"
       - name: eob_patient

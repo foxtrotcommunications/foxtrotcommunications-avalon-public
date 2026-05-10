@@ -21,7 +21,7 @@ SELECT
   sub_ext_val.code AS extension_value_code,
   sub_ext_val.display AS extension_value_display
 
-FROM {{ source('forge_patient', 'root') }} r
+FROM {{ source('forge_patient', 'root__root') }} r
 
 {{ forge_join('raw',         'forge_patient', 'patient_raw',         'r',       2) }}
 {{ forge_join('ext',         'forge_patient', 'patient_extension',   'raw',     3) }}

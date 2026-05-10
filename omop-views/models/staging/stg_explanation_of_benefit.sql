@@ -24,7 +24,7 @@ SELECT
   pay_amt.value AS payment_amount,
   pay_amt.currency AS payment_currency
 
-FROM {{ source('forge_eob', 'root') }} r
+FROM {{ source('forge_eob', 'root__root') }} r
 
 {{ forge_join('raw',       'forge_eob', 'eob_raw',              'r',   2) }}
 {{ forge_join('pat',       'forge_eob', 'eob_patient',          'raw', 3) }}

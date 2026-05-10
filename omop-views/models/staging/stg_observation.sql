@@ -36,7 +36,7 @@ SELECT
   -- valueString (free-text results — maps to omop_observation.value_as_string)
   raw.value_string
 
-FROM {{ source('forge_observation', 'root') }} r
+FROM {{ source('forge_observation', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_observation', 'observation_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_observation', 'observation_code',         'raw',    3) }}

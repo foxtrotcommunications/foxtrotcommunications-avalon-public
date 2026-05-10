@@ -39,7 +39,7 @@ SELECT
   , CAST(NULL AS STRING) AS discharge_disposition_system
   {% endif %}
 
-FROM {{ source('forge_encounter', 'root') }} r
+FROM {{ source('forge_encounter', 'root__root') }} r
 
 {{ forge_join('raw',      'forge_encounter', 'encounter_raw',         'r',    2) }}
 {{ forge_join('cls',      'forge_encounter', 'encounter_class',       'raw',  3) }}

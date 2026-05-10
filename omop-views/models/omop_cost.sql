@@ -34,7 +34,7 @@ eob_adjudication AS (
     cat_c.code AS adjudication_category,
     SAFE_CAST(adj_amt.value AS FLOAT64) AS adjudication_amount
 
-  FROM {{ source('forge_eob', 'root') }} r
+  FROM {{ source('forge_eob', 'root__root') }} r
 
   {{ forge_join('raw',       'forge_eob', 'eob_raw',                  'r',     2) }}
   {{ forge_join('pat',       'forge_eob', 'eob_patient',              'raw',   3) }}

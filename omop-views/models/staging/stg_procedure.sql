@@ -20,7 +20,7 @@ SELECT
   perf.start AS performed_start,
   perf.`end` AS performed_end
 
-FROM {{ source('forge_procedure', 'root') }} r
+FROM {{ source('forge_procedure', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_procedure', 'procedure_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_procedure', 'procedure_code',         'raw',    3) }}

@@ -58,7 +58,7 @@
       {% set info_query %}
         SELECT DISTINCT table_name
         FROM `{{ proj }}.{{ ds }}.INFORMATION_SCHEMA.TABLES`
-        WHERE table_name LIKE 'frg\_\_%'
+        WHERE table_name LIKE 'root\_\_%'
       {% endset %}
 
       {% set tables_result = run_query(info_query) %}
