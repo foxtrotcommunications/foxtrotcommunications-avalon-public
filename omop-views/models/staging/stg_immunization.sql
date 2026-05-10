@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Immunization from child tables
 --
 -- Tree (depth):
---   frg__root (2) → immunization_raw (3) → immunization_vaccine_code (4)
+--   root__root (2) → immunization_raw (3) → immunization_vaccine_code (4)
 --                                             → immunization_vaccine_coding (5)
 --                                          → immunization_patient (4)
 --                                          → immunization_encounter (4)
@@ -24,7 +24,7 @@ SELECT
   vacc_c.system  AS vaccine_system,
   raw.primary_source
 
-FROM {{ source('forge_immunization', 'frg__root') }} r
+FROM {{ source('forge_immunization', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_immunization', 'immunization_raw',            'r',   2) }}
 {{ forge_join('vacc',    'forge_immunization', 'immunization_vaccine_code',   'raw', 3) }}

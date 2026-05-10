@@ -27,7 +27,7 @@ List of files changed and why.
 ## Checklist
 
 - [ ] I've read [CONTRIBUTING.md](../CONTRIBUTING.md)
-- [ ] My staging models pull data only from child tables (not `frg__root` scalar fields)
+- [ ] My staging models pull data only from child tables (not `root__root` scalar fields)
 - [ ] My models use `{{ source() }}` with semantic names from `_sources.yml`
 - [ ] I've added/updated tests in `schema.yml` for any new columns
 - [ ] I haven't modified `forge-table-contract/` without explicit approval

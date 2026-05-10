@@ -4,11 +4,11 @@
 
   1. Config map (forge_table_map var) — fast, no warehouse call
   2. Compile-time discovery — queries INFORMATION_SCHEMA + table_path
-  3. Default convention — frg__root__raw_1__<4char><rank>
+  3. Default convention — root__root__raw_1__<4char><rank>
 
   Usage:
     {{ resolve_forge_table('forge_patient', 'extension', 'patient') }}
-    → returns the actual table name string, e.g. "frg__root__raw_1__exte1"
+    → returns the actual table name string, e.g. "root__root__raw_1__exte1"
 
   Args:
     source_name: dbt source name (e.g. 'forge_patient')
@@ -29,22 +29,22 @@
    table_path column, then checks which table has the matching path. #}
 {% if execute %}
   {% set fhir_path_map = {
-    'raw':           'frg__root',
-    'extension':     'frg__root__extension',
-    'ext_ext':       'frg__root__extension__extension',
-    'ext_ext_val':   'frg__root__extension__extension__valueCoding',
-    'class':         'frg__root__class',
-    'period':        'frg__root__period',
-    'participant':   'frg__root__participant',
-    'part_indiv':    'frg__root__participant__individual',
-    'subject':       'frg__root__subject',
-    'encounter':     'frg__root__encounter',
-    'code':          'frg__root__code',
-    'code_coding':   'frg__root__code__coding',
-    'performed':     'frg__root__performedPeriod',
-    'value':         'frg__root__valueQuantity',
-    'med_concept':   'frg__root__medicationCodeableConcept',
-    'med_coding':    'frg__root__medicationCodeableConcept__coding',
+    'raw':           'root__root',
+    'extension':     'root__root__extension',
+    'ext_ext':       'root__root__extension__extension',
+    'ext_ext_val':   'root__root__extension__extension__valueCoding',
+    'class':         'root__root__class',
+    'period':        'root__root__period',
+    'participant':   'root__root__participant',
+    'part_indiv':    'root__root__participant__individual',
+    'subject':       'root__root__subject',
+    'encounter':     'root__root__encounter',
+    'code':          'root__root__code',
+    'code_coding':   'root__root__code__coding',
+    'performed':     'root__root__performedPeriod',
+    'value':         'root__root__valueQuantity',
+    'med_concept':   'root__root__medicationCodeableConcept',
+    'med_coding':    'root__root__medicationCodeableConcept__coding',
   } %}
 
   {% set target_path = fhir_path_map.get(semantic_key) %}
@@ -54,7 +54,7 @@
     {% set proj = var('forge_project', '') %}
 
     {% if ds and proj %}
-      {# Find all frg__ tables in the dataset #}
+      {# Find all root__ tables in the dataset #}
       {% set info_query %}
         SELECT DISTINCT table_name
         FROM `{{ proj }}.{{ ds }}.INFORMATION_SCHEMA.TABLES`

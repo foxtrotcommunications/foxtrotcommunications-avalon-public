@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core MedicationRequest from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → med_request_raw (3) → med_request_med_concept (4)
+--   root__root (2) → med_request_raw (3) → med_request_med_concept (4)
 --                                          → med_request_med_coding (5)
 --                                        → med_request_subject (4)
 --                                        → med_request_encounter (4)
@@ -40,7 +40,7 @@ SELECT
   -- Dosage dose quantity
   , dose_qty.value AS dose_quantity_value
 
-FROM {{ source('forge_medication_request', 'frg__root') }} r
+FROM {{ source('forge_medication_request', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_medication_request', 'med_request_raw',         'r',   2) }}
 {{ forge_join('med',     'forge_medication_request', 'med_request_med_concept', 'raw', 3) }}

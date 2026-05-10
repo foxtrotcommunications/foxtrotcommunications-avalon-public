@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Claim from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → claim_raw (3) → claim_billable_period (4)
+--   root__root (2) → claim_raw (3) → claim_billable_period (4)
 --                                  → claim_provider (4)
 --                                  → claim_patient (4)
 --                                  → claim_facility (4)
@@ -33,7 +33,7 @@ SELECT
   item_prod.code AS item_product_code,
   item_prod.display AS item_product_display
 
-FROM {{ source('forge_claim', 'frg__root') }} r
+FROM {{ source('forge_claim', 'root__root') }} r
 
 {{ forge_join('raw',       'forge_claim', 'claim_raw',              'r',    2) }}
 {{ forge_join('bill',      'forge_claim', 'claim_billable_period',  'raw',  3) }}

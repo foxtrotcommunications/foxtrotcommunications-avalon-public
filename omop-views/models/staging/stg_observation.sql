@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Observation from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → observation_raw (3) → observation_code (4) → observation_code_coding (5)
+--   root__root (2) → observation_raw (3) → observation_code (4) → observation_code_coding (5)
 --                                        → observation_value_codeable_concept (4) [valu1]
 --                                            → observation_value_cc_coding (5)    [valu1__codi1]
 --                                        → observation_value_quantity (4)         [valu2]
@@ -36,7 +36,7 @@ SELECT
   -- valueString (free-text results — maps to omop_observation.value_as_string)
   raw.value_string
 
-FROM {{ source('forge_observation', 'frg__root') }} r
+FROM {{ source('forge_observation', 'root__root') }} r
 
 {{ forge_join('raw',     'forge_observation', 'observation_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_observation', 'observation_code',         'raw',    3) }}
