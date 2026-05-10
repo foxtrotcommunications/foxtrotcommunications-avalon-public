@@ -14,7 +14,7 @@ WITH eob_coverage AS (
     cont_type.text AS plan_type,
     cont_payo.display AS payor_display
 
-  FROM {{ source('forge_eob', 'frg__root') }} r
+  FROM {{ source('forge_eob', 'root') }} r
 
   {{ forge_join('raw',        'forge_eob', 'eob_raw',              'r',    2) }}
   {{ forge_join('pat',        'forge_eob', 'eob_patient',          'raw',  3) }}

@@ -12,8 +12,8 @@ The all_metadata.json is produced by forge-core's UnnestingResult
 and saved to GCS at: {artifacts_gcs_path}/schema/all_metadata.json
 
 Each entry has:
-  - model_name: actual table name (e.g. "frg__root__raw_1__exte1")
-  - table_path: canonical FHIR path (e.g. "frg__root__extension")
+  - model_name: actual table name (e.g. "root__raw_1__exte1")
+  - table_path: canonical FHIR path (e.g. "root__extension")
   - depth: nesting level
 """
 
@@ -27,57 +27,57 @@ logger = logging.getLogger(__name__)
 # table_path value → (resource_key, semantic_key)
 PATH_TO_KEY = {
     # Patient
-    "frg__root__extension":                             ("patient", "extension"),
-    "frg__root__extension__extension":                  ("patient", "ext_ext"),
-    "frg__root__extension__extension__valueCoding":     ("patient", "ext_ext_val"),
+    "root__extension":                             ("patient", "extension"),
+    "root__extension__extension":                  ("patient", "ext_ext"),
+    "root__extension__extension__valueCoding":     ("patient", "ext_ext_val"),
     # Encounter
-    "frg__root__class":                                 ("encounter", "class"),
-    "frg__root__period":                                ("encounter", "period"),
-    "frg__root__participant":                           ("encounter", "participant"),
-    "frg__root__participant__individual":               ("encounter", "part_indiv"),
-    "frg__root__subject":                               ("encounter", "subject"),
+    "root__class":                                 ("encounter", "class"),
+    "root__period":                                ("encounter", "period"),
+    "root__participant":                           ("encounter", "participant"),
+    "root__participant__individual":               ("encounter", "part_indiv"),
+    "root__subject":                               ("encounter", "subject"),
     # Condition
-    "frg__root__code":                                  ("condition", "code"),
-    "frg__root__code__coding":                          ("condition", "code_coding"),
+    "root__code":                                  ("condition", "code"),
+    "root__code__coding":                          ("condition", "code_coding"),
     # Also used by: procedure, observation
     # Procedure
-    "frg__root__performedPeriod":                        ("procedure", "performed"),
+    "root__performedPeriod":                        ("procedure", "performed"),
     # Observation
-    "frg__root__valueQuantity":                          ("observation", "value"),
+    "root__valueQuantity":                          ("observation", "value"),
     # MedicationRequest
-    "frg__root__medicationCodeableConcept":              ("medication_request", "med_concept"),
-    "frg__root__medicationCodeableConcept__coding":      ("medication_request", "med_coding"),
+    "root__medicationCodeableConcept":              ("medication_request", "med_concept"),
+    "root__medicationCodeableConcept__coding":      ("medication_request", "med_coding"),
     # Claim
-    "frg__root__billablePeriod":                         ("claim", "billable_period"),
-    "frg__root__provider":                               ("claim", "provider"),
-    "frg__root__patient":                                ("claim", "patient"),
-    "frg__root__facility":                               ("claim", "facility"),
-    "frg__root__priority":                               ("claim", "priority"),
-    "frg__root__priority__coding":                       ("claim", "priority_coding"),
-    "frg__root__item":                                   ("claim", "item"),
-    "frg__root__item__encounter":                        ("claim", "item_encounter"),
-    "frg__root__item__net":                              ("claim", "item_net"),
-    "frg__root__item__productOrService__coding":         ("claim", "item_product_coding"),
+    "root__billablePeriod":                         ("claim", "billable_period"),
+    "root__provider":                               ("claim", "provider"),
+    "root__patient":                                ("claim", "patient"),
+    "root__facility":                               ("claim", "facility"),
+    "root__priority":                               ("claim", "priority"),
+    "root__priority__coding":                       ("claim", "priority_coding"),
+    "root__item":                                   ("claim", "item"),
+    "root__item__encounter":                        ("claim", "item_encounter"),
+    "root__item__net":                              ("claim", "item_net"),
+    "root__item__productOrService__coding":         ("claim", "item_product_coding"),
     # EOB
-    "frg__root__insurer":                                ("eob", "insurer"),
-    "frg__root__total":                                  ("eob", "total"),
-    "frg__root__total__amount":                          ("eob", "total_amount"),
-    "frg__root__payment":                                ("eob", "payment"),
-    "frg__root__payment__amount":                        ("eob", "payment_amount"),
+    "root__insurer":                                ("eob", "insurer"),
+    "root__total":                                  ("eob", "total"),
+    "root__total__amount":                          ("eob", "total_amount"),
+    "root__payment":                                ("eob", "payment"),
+    "root__payment__amount":                        ("eob", "payment_amount"),
 }
 
 # Shared paths (same FHIR path, different resource contexts)
 SHARED_PATHS = {
-    "frg__root__subject":       [("encounter", "subject"), ("condition", "subject"),
+    "root__subject":       [("encounter", "subject"), ("condition", "subject"),
                                   ("procedure", "subject"), ("observation", "subject"),
                                   ("medication_request", "subject")],
-    "frg__root__encounter":     [("condition", "encounter"), ("procedure", "encounter"),
+    "root__encounter":     [("condition", "encounter"), ("procedure", "encounter"),
                                   ("observation", "encounter"), ("medication_request", "encounter")],
-    "frg__root__code":          [("condition", "code"), ("procedure", "code"),
+    "root__code":          [("condition", "code"), ("procedure", "code"),
                                   ("observation", "code")],
-    "frg__root__code__coding":  [("condition", "code_coding"), ("procedure", "code_coding"),
+    "root__code__coding":  [("condition", "code_coding"), ("procedure", "code_coding"),
                                   ("observation", "code_coding")],
-    "frg__root__patient":       [("claim", "patient"), ("eob", "patient")],
+    "root__patient":       [("claim", "patient"), ("eob", "patient")],
 }
 
 
@@ -106,14 +106,14 @@ def build_forge_table_map(
             continue
 
         # Every resource has raw_1 as first child
-        if table_path.count("__") == 1 and table_path.startswith("frg__"):
-            # This is frg__root level — skip, we use frg__root directly
+        if table_path.count("__") == 1 and table_path.startswith("root__"):
+            # This is root level — skip, we use root directly
             continue
 
         # Check for raw (first child of root)
         depth = len(table_path.split("__"))
         if depth == 2 and "root" in table_path:
-            # frg__root__<field> — this could be raw_1
+            # root__<field> — this could be raw_1
             if entry.get("field_name") == "root":
                 # This IS the raw table
                 # Determine resource type and set raw for all possible resources

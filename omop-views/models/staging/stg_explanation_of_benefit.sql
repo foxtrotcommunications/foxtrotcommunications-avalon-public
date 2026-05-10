@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core ExplanationOfBenefit from child tables
 --
 -- Tree (depth):
---   frg__root (2) → eob_raw (3) → eob_patient (4)
+--   root (2) → eob_raw (3) → eob_patient (4)
 --                                → eob_insurer (4)
 --                                → eob_insurance (4)
 --                                → eob_total (4) → eob_total_amount (5)
@@ -24,7 +24,7 @@ SELECT
   pay_amt.value AS payment_amount,
   pay_amt.currency AS payment_currency
 
-FROM {{ source('forge_eob', 'frg__root') }} r
+FROM {{ source('forge_eob', 'root') }} r
 
 {{ forge_join('raw',       'forge_eob', 'eob_raw',              'r',   2) }}
 {{ forge_join('pat',       'forge_eob', 'eob_patient',          'raw', 3) }}

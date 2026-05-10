@@ -3,7 +3,7 @@
 -- Staging: flatten forge-core Condition from child tables only
 --
 -- Tree (depth):
---   frg__root (2) → condition_raw (3) → condition_code (4) → condition_code_coding (5)
+--   root (2) → condition_raw (3) → condition_code (4) → condition_code_coding (5)
 --                                      → condition_subject (4)
 --                                      → condition_encounter (4)
 
@@ -19,7 +19,7 @@ SELECT
   code_c.display AS code_display,
   raw.clinical_status
 
-FROM {{ source('forge_condition', 'frg__root') }} r
+FROM {{ source('forge_condition', 'root') }} r
 
 {{ forge_join('raw',     'forge_condition', 'condition_raw',          'r',      2) }}
 {{ forge_join('code_cc', 'forge_condition', 'condition_code',         'raw',    3) }}

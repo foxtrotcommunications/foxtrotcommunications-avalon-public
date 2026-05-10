@@ -1,11 +1,11 @@
 {{ config(materialized='view') }}
 
 -- Staging: flatten forge-core Patient from child tables only
--- frg__root provides ingestion_hash/timestamp (join anchor)
+-- root provides ingestion_hash/timestamp (join anchor)
 -- All clinical values from child sub-tables
 --
 -- Tree (depth):
---   frg__root (2) → patient_raw (3) → patient_extension (4)
+--   root (2) → patient_raw (3) → patient_extension (4)
 --                                      → patient_ext_ext (5) → patient_ext_ext_val (6)
 
 SELECT
@@ -21,7 +21,7 @@ SELECT
   sub_ext_val.code AS extension_value_code,
   sub_ext_val.display AS extension_value_display
 
-FROM {{ source('forge_patient', 'frg__root') }} r
+FROM {{ source('forge_patient', 'root') }} r
 
 {{ forge_join('raw',         'forge_patient', 'patient_raw',         'r',       2) }}
 {{ forge_join('ext',         'forge_patient', 'patient_extension',   'raw',     3) }}
