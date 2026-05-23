@@ -1,0 +1,132 @@
+version: 2
+
+models:
+  # ═══════════════════════════════════════════════════════════
+  # STAGING MODELS — Contract tests
+  # ═══════════════════════════════════════════════════════════
+
+  - name: stg_patient
+    description: "Flattened Patient from forge-core sub-tables"
+    columns:
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_patient_address
+    description: "Flattened Patient.address from forge-core sub-tables with geolocation"
+    columns:
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_encounter
+    description: "Flattened Encounter from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_condition
+    description: "Flattened Condition from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_procedure
+    description: "Flattened Procedure from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_observation
+    description: "Flattened Observation from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: code
+        tests:
+          - not_null
+
+  - name: stg_medication_request
+    description: "Flattened MedicationRequest from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: med_code
+        description: "NULL when MedicationRequest lacks medicationCodeableConcept (filtered by omop_drug_exposure)"
+        tests:
+          - not_null:
+              severity: warn
+
+  - name: stg_claim
+    description: "Flattened Claim from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_explanation_of_benefit
+    description: "Flattened ExplanationOfBenefit from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: ingestion_hash
+        tests:
+          - not_null
+
+  - name: stg_immunization
+    description: "Flattened Immunization from forge-core sub-tables"
+    columns:
+      - name: resource_id
+        tests:
+          - not_null
+      - name: patient_id
+        tests:
+          - not_null
+      - name: vaccine_code
+        tests:
+          - not_null
