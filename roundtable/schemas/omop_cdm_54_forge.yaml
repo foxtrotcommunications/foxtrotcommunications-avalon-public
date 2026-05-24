@@ -40,8 +40,11 @@ tables:
       - { name: care_site_id, type: INT64, fk: omop_care_site.care_site_id }
       - { name: person_source_value, type: STRING, description: "Original FHIR Patient.id" }
       - { name: gender_source_value, type: STRING }
+      - { name: gender_source_concept_id, type: INT64 }
       - { name: race_source_value, type: STRING }
+      - { name: race_source_concept_id, type: INT64 }
       - { name: ethnicity_source_value, type: STRING }
+      - { name: ethnicity_source_concept_id, type: INT64 }
 
   - name: omop_observation_period
     description: "One row per patient — min/max encounter dates"
@@ -68,8 +71,12 @@ tables:
       - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
       - { name: care_site_id, type: INT64, fk: omop_care_site.care_site_id }
       - { name: visit_source_value, type: STRING, description: "FHIR Encounter.id" }
+      - { name: visit_source_concept_id, type: INT64 }
+      - { name: admitted_from_concept_id, type: INT64 }
       - { name: admitted_from_source_value, type: STRING }
+      - { name: discharged_to_concept_id, type: INT64 }
       - { name: discharged_to_source_value, type: STRING }
+      - { name: preceding_visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
 
   - name: omop_condition_occurrence
     description: "One row per diagnosis/condition event"
@@ -81,12 +88,16 @@ tables:
       - { name: condition_start_date, type: DATE }
       - { name: condition_start_datetime, type: TIMESTAMP }
       - { name: condition_end_date, type: DATE }
+      - { name: condition_end_datetime, type: TIMESTAMP }
       - { name: condition_type_concept_id, type: INT64 }
       - { name: stop_reason, type: STRING }
       - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
       - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: visit_detail_id, type: INT64 }
       - { name: condition_source_value, type: STRING, description: "SNOMED code from FHIR" }
       - { name: condition_source_concept_id, type: INT64 }
+      - { name: condition_status_concept_id, type: INT64 }
+      - { name: condition_status_source_value, type: STRING }
 
   - name: omop_procedure_occurrence
     description: "One row per procedure event"
@@ -97,10 +108,14 @@ tables:
       - { name: procedure_concept_id, type: INT64, description: "SNOMED standard concept" }
       - { name: procedure_date, type: DATE }
       - { name: procedure_datetime, type: TIMESTAMP }
+      - { name: procedure_end_date, type: DATE }
+      - { name: procedure_end_datetime, type: TIMESTAMP }
       - { name: procedure_type_concept_id, type: INT64 }
+      - { name: modifier_concept_id, type: INT64 }
       - { name: quantity, type: INT64 }
       - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
       - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: visit_detail_id, type: INT64 }
       - { name: procedure_source_value, type: STRING, description: "SNOMED code from FHIR" }
       - { name: procedure_source_concept_id, type: INT64 }
       - { name: modifier_source_value, type: STRING }
@@ -115,15 +130,19 @@ tables:
       - { name: drug_exposure_start_date, type: DATE }
       - { name: drug_exposure_start_datetime, type: TIMESTAMP }
       - { name: drug_exposure_end_date, type: DATE }
+      - { name: drug_exposure_end_datetime, type: TIMESTAMP }
+      - { name: verbatim_end_date, type: DATE }
       - { name: drug_type_concept_id, type: INT64 }
       - { name: stop_reason, type: STRING }
       - { name: refills, type: INT64 }
+      - { name: quantity, type: FLOAT64, description: "Dose quantity" }
       - { name: days_supply, type: INT64 }
       - { name: sig, type: STRING, description: "Dosage instructions text" }
       - { name: route_concept_id, type: INT64 }
       - { name: lot_number, type: STRING }
       - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
       - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: visit_detail_id, type: INT64 }
       - { name: drug_source_value, type: STRING, description: "RxNorm/CVX code" }
       - { name: drug_source_concept_id, type: INT64 }
       - { name: route_source_value, type: STRING }
@@ -138,7 +157,9 @@ tables:
       - { name: measurement_concept_id, type: INT64, description: "LOINC standard concept" }
       - { name: measurement_date, type: DATE }
       - { name: measurement_datetime, type: TIMESTAMP }
+      - { name: measurement_time, type: STRING, description: "HH:MM:SS extracted from effective date" }
       - { name: measurement_type_concept_id, type: INT64 }
+      - { name: operator_concept_id, type: INT64 }
       - { name: value_as_number, type: FLOAT64 }
       - { name: value_as_concept_id, type: INT64 }
       - { name: unit_concept_id, type: INT64 }
@@ -146,7 +167,9 @@ tables:
       - { name: range_high, type: FLOAT64 }
       - { name: provider_id, type: INT64 }
       - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: visit_detail_id, type: INT64 }
       - { name: measurement_source_value, type: STRING, description: "LOINC code" }
+      - { name: measurement_source_concept_id, type: INT64 }
       - { name: unit_source_value, type: STRING }
       - { name: value_source_value, type: STRING }
 
@@ -163,11 +186,17 @@ tables:
       - { name: value_as_number, type: FLOAT64 }
       - { name: value_as_string, type: STRING }
       - { name: value_as_concept_id, type: INT64 }
+      - { name: qualifier_concept_id, type: INT64 }
+      - { name: unit_concept_id, type: INT64 }
       - { name: provider_id, type: INT64 }
       - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: visit_detail_id, type: INT64 }
       - { name: observation_source_value, type: STRING }
+      - { name: observation_source_concept_id, type: INT64 }
       - { name: unit_source_value, type: STRING }
       - { name: value_source_value, type: STRING }
+      - { name: observation_event_id, type: INT64 }
+      - { name: obs_event_field_concept_id, type: INT64 }
 
   - name: omop_death
     description: "One row per deceased patient"
@@ -193,15 +222,20 @@ tables:
       - { name: cost_type_concept_id, type: INT64 }
       - { name: currency_concept_id, type: INT64 }
       - { name: total_charge, type: FLOAT64 }
-      - { name: total_cost, type: FLOAT64 }
       - { name: total_paid, type: FLOAT64 }
       - { name: paid_by_payer, type: FLOAT64 }
       - { name: paid_by_patient, type: FLOAT64 }
       - { name: paid_patient_copay, type: FLOAT64 }
       - { name: paid_patient_deductible, type: FLOAT64 }
       - { name: paid_patient_coinsurance, type: FLOAT64 }
+      - { name: paid_by_primary, type: FLOAT64 }
+      - { name: paid_ingredient_cost, type: FLOAT64 }
+      - { name: paid_dispensing_fee, type: FLOAT64 }
       - { name: payer_plan_period_id, type: INT64 }
+      - { name: amount_allowed, type: FLOAT64 }
+      - { name: revenue_code_concept_id, type: INT64 }
       - { name: revenue_code_source_value, type: STRING }
+      - { name: drg_concept_id, type: INT64 }
       - { name: drg_source_value, type: STRING }
 
   - name: omop_payer_plan_period
@@ -214,12 +248,17 @@ tables:
       - { name: payer_plan_period_end_date, type: DATE }
       - { name: payer_concept_id, type: INT64 }
       - { name: payer_source_value, type: STRING, description: "Insurer name" }
+      - { name: payer_source_concept_id, type: INT64 }
       - { name: plan_concept_id, type: INT64 }
       - { name: plan_source_value, type: STRING }
+      - { name: plan_source_concept_id, type: INT64 }
       - { name: sponsor_concept_id, type: INT64 }
+      - { name: sponsor_source_value, type: STRING }
+      - { name: sponsor_source_concept_id, type: INT64 }
       - { name: family_source_value, type: STRING }
       - { name: stop_reason_concept_id, type: INT64 }
       - { name: stop_reason_source_value, type: STRING }
+      - { name: stop_reason_source_concept_id, type: INT64 }
 
   # ─── Derived / Era Tables ──────────────────────────────
 
@@ -244,6 +283,7 @@ tables:
       - { name: drug_era_start_date, type: DATE }
       - { name: drug_era_end_date, type: DATE }
       - { name: drug_exposure_count, type: INT64 }
+      - { name: gap_days, type: INT64, description: "Total gap days within the era" }
 
   # ─── Reference / Admin ─────────────────────────────────
 
@@ -262,6 +302,7 @@ tables:
       - { name: country_source_value, type: STRING }
       - { name: latitude, type: FLOAT64 }
       - { name: longitude, type: FLOAT64 }
+      - { name: location_source_value, type: STRING }
 
   - name: omop_provider
     description: "Healthcare providers — from encounter participants and med request requesters"
@@ -269,6 +310,7 @@ tables:
     columns:
       - { name: provider_id, type: INT64 }
       - { name: provider_name, type: STRING }
+      - { name: npi, type: STRING }
       - { name: dea, type: INT64 }
       - { name: specialty_concept_id, type: INT64 }
       - { name: care_site_id, type: INT64 }
@@ -276,7 +318,9 @@ tables:
       - { name: gender_concept_id, type: INT64 }
       - { name: provider_source_value, type: STRING, description: "FHIR Practitioner reference" }
       - { name: specialty_source_value, type: STRING }
+      - { name: specialty_source_concept_id, type: INT64 }
       - { name: gender_source_value, type: STRING }
+      - { name: gender_source_concept_id, type: INT64 }
 
   - name: omop_care_site
     description: "Healthcare organizations — from encounter service providers"
@@ -301,6 +345,7 @@ tables:
       - { name: cdm_release_date, type: DATE }
       - { name: cdm_version, type: STRING }
       - { name: vocabulary_version, type: STRING }
+      - { name: source_documentation_reference, type: STRING }
 
 # ─── Query Patterns ────────────────────────────────────
 # Common joins for the AI to use:
