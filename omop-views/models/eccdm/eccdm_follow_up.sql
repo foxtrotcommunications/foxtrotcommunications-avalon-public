@@ -1,9 +1,9 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- ECCDM Entity: LastFollowUp
 -- Most recent follow-up information for each cancer patient.
 -- Summary of the latest known clinical status.
--- Depends on: omop_visit_occurrence, omop_death, eccdm_cancer_patient, eccdm_cancer_condition
+-- Depends on: omop_visit_occurrence, eccdm_cancer_patient, eccdm_cancer_condition, eccdm_cancer_treatment
 
 WITH latest_visit AS (
   SELECT

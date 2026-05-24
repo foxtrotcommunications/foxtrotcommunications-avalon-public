@@ -1,8 +1,9 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- ECCDM Entity: CancerPatient
 -- The subject of care, affected by one or more cancer conditions.
--- Depends on: omop_person, omop_observation_period, omop_condition_occurrence
+-- Uses concept_ancestor hierarchy (443392) instead of ICD-10 code matching.
+-- Depends on: omop_person, omop_observation_period, omop_death, omop_condition_occurrence
 
 SELECT DISTINCT
   p.person_id,
@@ -29,6 +30,9 @@ LEFT JOIN {{ ref('omop_death') }} d
 WHERE p.person_id IN (
   SELECT DISTINCT person_id
   FROM {{ ref('omop_condition_occurrence') }}
-  WHERE condition_source_value LIKE 'C%'
-    AND condition_source_value NOT LIKE 'C44%'
+  WHERE condition_concept_id IN (
+    SELECT ca.descendant_concept_id
+    FROM {{ source('omop_vocab', 'concept_ancestor') }} ca
+    WHERE ca.ancestor_concept_id = 443392  -- Malignant neoplastic disease
+  )
 )

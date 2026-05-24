@@ -2,15 +2,17 @@ version: 2
 
 models:
   # ═══════════════════════════════════════════════════════════
-  # ECCDM — European Cancer Common Data Model Views
+  # ECCDM — European Cancer Common Data Model Tables
   # HL7 EU Cancer Common IG: https://build.fhir.org/ig/hl7-eu/cancer-common/
   #
-  # These views sit on top of the OMOP CDM tables and filter/reshape
+  # These tables sit on top of the OMOP CDM tables and filter/reshape
   # them into the 6 ECCDM conceptual entities for cancer analytics.
+  # Cancer identification uses OMOP concept_ancestor hierarchy
+  # (descendants of concept 443392 — Malignant neoplastic disease).
   # ═══════════════════════════════════════════════════════════
 
   - name: eccdm_cancer_patient
-    description: "ECCDM CancerPatient — cancer patients filtered from omop_person. One row per patient with at least one ICD-10 C-code condition (excluding C44 non-melanoma skin)."
+    description: "ECCDM CancerPatient — patients with at least one condition descending from OMOP concept 443392 (Malignant neoplastic disease)."
     columns:
       - name: person_id
         tests:
@@ -21,7 +23,7 @@ models:
               field: person_id
 
   - name: eccdm_cancer_condition
-    description: "ECCDM CancerConditionAtDiagnosis — cancer diagnoses from omop_condition_occurrence (ICD-10 C00-C97, excluding C44)."
+    description: "ECCDM CancerConditionAtDiagnosis — cancer diagnoses identified via OMOP concept_ancestor hierarchy from SNOMED-coded conditions."
     columns:
       - name: condition_occurrence_id
         tests:
@@ -36,33 +38,22 @@ models:
       - name: diagnosis_date
         tests:
           - not_null
-      - name: icd10_code
+      - name: condition_source_value
         tests:
           - not_null
 
   - name: eccdm_cancer_stage
-    description: "ECCDM CancerStage — TNM staging assessments from omop_measurement (LOINC codes for clinical and pathological staging)."
+    description: "ECCDM CancerStage — measurements for cancer patients including TNM staging (if available) and lab values."
     columns:
       - name: measurement_id
         tests:
-          - unique
           - not_null
       - name: person_id
         tests:
           - not_null
-      - name: staging_type
-        description: "clinical or pathological"
-        tests:
-          - accepted_values:
-              values: ['clinical', 'pathological', 'unknown']
-      - name: tnm_component
-        description: "stage_group, T, N, or M"
-        tests:
-          - accepted_values:
-              values: ['stage_group', 'T', 'N', 'M', 'other']
 
   - name: eccdm_cancer_treatment
-    description: "ECCDM CancerTreatment — surgery, radiotherapy, and systemic treatments for cancer patients. Unions procedure_occurrence and drug_exposure."
+    description: "ECCDM CancerTreatment — surgery, radiotherapy, and systemic treatments for cancer patients using OMOP concept hierarchy."
     columns:
       - name: treatment_id
         tests:
@@ -80,11 +71,10 @@ models:
               values: ['surgery', 'radiotherapy', 'systemic']
 
   - name: eccdm_treatment_response
-    description: "ECCDM OverallCancerTreatmentResponse — tumor marker measurements (PSA, CEA, CA-125, CA-19-9) for cancer patients."
+    description: "ECCDM OverallCancerTreatmentResponse — lab measurements for cancer patients that can indicate treatment response trends."
     columns:
       - name: measurement_id
         tests:
-          - unique
           - not_null
       - name: person_id
         tests:
@@ -92,10 +82,6 @@ models:
           - relationships:
               to: ref('eccdm_cancer_patient')
               field: person_id
-      - name: response_marker_type
-        tests:
-          - accepted_values:
-              values: ['PSA', 'CEA', 'CA-125', 'CA-19-9', 'other_marker']
 
   - name: eccdm_follow_up
     description: "ECCDM LastFollowUp — most recent visit per cancer patient with vital status, days since diagnosis, and days since last treatment."

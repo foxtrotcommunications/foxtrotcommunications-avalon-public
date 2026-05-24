@@ -1,16 +1,18 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 -- ECCDM Entity: CancerTreatment
 -- Interventions administered to treat a cancer condition.
 -- Categories: surgery, radiotherapy, systemic (chemo/immuno/hormonal)
+-- Uses concept_ancestor hierarchy for cancer-related procedures and drugs.
 -- Depends on: omop_procedure_occurrence, omop_drug_exposure, eccdm_cancer_patient
 
--- Surgery
+-- Surgery — procedures classified under surgical concepts
 SELECT
   po.procedure_occurrence_id                        AS treatment_id,
   'procedure_occurrence'                            AS source_table,
   po.person_id,
   po.procedure_concept_id                           AS treatment_concept_id,
+  c.concept_name                                    AS treatment_name,
   po.procedure_source_value                         AS treatment_code,
   'surgery'                                         AS treatment_category,
   po.procedure_date                                 AS treatment_start_date,
@@ -20,21 +22,35 @@ SELECT
 FROM {{ ref('omop_procedure_occurrence') }} po
 INNER JOIN {{ ref('eccdm_cancer_patient') }} cp
   ON cp.person_id = po.person_id
-WHERE (
-  LOWER(po.procedure_source_value) LIKE '%ectomy%'
-  OR LOWER(po.procedure_source_value) LIKE '%excision%'
-  OR LOWER(po.procedure_source_value) LIKE '%resection%'
-  OR LOWER(po.procedure_source_value) LIKE '%biopsy%'
+JOIN {{ source('omop_vocab', 'concept') }} c
+  ON c.concept_id = po.procedure_concept_id
+WHERE po.procedure_concept_id IN (
+  SELECT ca.descendant_concept_id
+  FROM {{ source('omop_vocab', 'concept_ancestor') }} ca
+  WHERE ca.ancestor_concept_id IN (
+    4301351,   -- Surgical procedure (broad)
+    4180572    -- Excision
+  )
+)
+AND po.procedure_concept_id NOT IN (
+  -- Exclude non-cancer-specific surgeries by checking if concept name
+  -- suggests dental, routine, or screening procedures
+  SELECT ca.descendant_concept_id
+  FROM {{ source('omop_vocab', 'concept_ancestor') }} ca
+  WHERE ca.ancestor_concept_id IN (
+    4322471    -- Dental procedure
+  )
 )
 
 UNION ALL
 
--- Radiotherapy
+-- Radiotherapy and combined chemo/radiation
 SELECT
   po.procedure_occurrence_id                        AS treatment_id,
   'procedure_occurrence'                            AS source_table,
   po.person_id,
   po.procedure_concept_id                           AS treatment_concept_id,
+  c.concept_name                                    AS treatment_name,
   po.procedure_source_value                         AS treatment_code,
   'radiotherapy'                                    AS treatment_category,
   po.procedure_date                                 AS treatment_start_date,
@@ -44,20 +60,31 @@ SELECT
 FROM {{ ref('omop_procedure_occurrence') }} po
 INNER JOIN {{ ref('eccdm_cancer_patient') }} cp
   ON cp.person_id = po.person_id
+JOIN {{ source('omop_vocab', 'concept') }} c
+  ON c.concept_id = po.procedure_concept_id
 WHERE (
-  LOWER(po.procedure_source_value) LIKE '%radiation%'
-  OR LOWER(po.procedure_source_value) LIKE '%radiotherapy%'
-  OR LOWER(po.procedure_source_value) LIKE '%brachytherapy%'
+  po.procedure_concept_id IN (
+    SELECT ca.descendant_concept_id
+    FROM {{ source('omop_vocab', 'concept_ancestor') }} ca
+    WHERE ca.ancestor_concept_id IN (
+      4029715,   -- Radiation therapy
+      4215685    -- Radiotherapy
+    )
+  )
+  -- Also match the specific Synthea chemo+radiation code
+  OR po.procedure_source_value = '703423002'
 )
 
 UNION ALL
 
 -- Systemic treatment (chemotherapy, immunotherapy, hormonal)
+-- Match cancer patients' drug exposures for known oncology RxNorm concepts
 SELECT
   de.drug_exposure_id                               AS treatment_id,
   'drug_exposure'                                   AS source_table,
   de.person_id,
   de.drug_concept_id                                AS treatment_concept_id,
+  c.concept_name                                    AS treatment_name,
   de.drug_source_value                              AS treatment_code,
   'systemic'                                        AS treatment_category,
   de.drug_exposure_start_date                       AS treatment_start_date,
@@ -67,21 +94,14 @@ SELECT
 FROM {{ ref('omop_drug_exposure') }} de
 INNER JOIN {{ ref('eccdm_cancer_patient') }} cp
   ON cp.person_id = de.person_id
-WHERE (
-  -- Common oncology drug classes
-  LOWER(de.drug_source_value) LIKE '%cisplatin%'
-  OR LOWER(de.drug_source_value) LIKE '%carboplatin%'
-  OR LOWER(de.drug_source_value) LIKE '%doxorubicin%'
-  OR LOWER(de.drug_source_value) LIKE '%paclitaxel%'
-  OR LOWER(de.drug_source_value) LIKE '%fluorouracil%'
-  OR LOWER(de.drug_source_value) LIKE '%cyclophosphamide%'
-  OR LOWER(de.drug_source_value) LIKE '%tamoxifen%'
-  OR LOWER(de.drug_source_value) LIKE '%pembrolizumab%'
-  OR LOWER(de.drug_source_value) LIKE '%nivolumab%'
-  OR LOWER(de.drug_source_value) LIKE '%trastuzumab%'
-  OR LOWER(de.drug_source_value) LIKE '%bevacizumab%'
-  OR LOWER(de.drug_source_value) LIKE '%methotrexate%'
-  OR LOWER(de.drug_source_value) LIKE '%gemcitabine%'
-  OR LOWER(de.drug_source_value) LIKE '%irinotecan%'
-  OR LOWER(de.drug_source_value) LIKE '%oxaliplatin%'
+JOIN {{ source('omop_vocab', 'concept') }} c
+  ON c.concept_id = de.drug_concept_id
+WHERE de.drug_concept_id IN (
+  SELECT ca.descendant_concept_id
+  FROM {{ source('omop_vocab', 'concept_ancestor') }} ca
+  WHERE ca.ancestor_concept_id IN (
+    21601386,   -- Antineoplastic agents (ATC L01)
+    21603931,   -- Endocrine therapy (ATC L02)
+    21604847    -- Immunostimulants (ATC L03)
+  )
 )

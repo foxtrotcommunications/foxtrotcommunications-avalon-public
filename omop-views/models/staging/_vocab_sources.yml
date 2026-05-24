@@ -53,3 +53,19 @@ sources:
             description: OMOP Standard concept_id to write into *_concept_id fields.
           - name: domain_id
             description: OMOP domain of the standard concept.
+
+      - name: concept_ancestor
+        description: >
+          OMOP concept hierarchy table. Each row defines an ancestor-descendant
+          relationship with the number of levels of separation.
+          Used by ECCDM models to identify cancer conditions via
+          ancestor_concept_id = 443392 (Malignant neoplastic disease).
+        columns:
+          - name: ancestor_concept_id
+            description: OMOP concept_id of the ancestor concept.
+          - name: descendant_concept_id
+            description: OMOP concept_id of the descendant concept.
+          - name: min_levels_of_separation
+            description: Minimum number of hops between ancestor and descendant.
+          - name: max_levels_of_separation
+            description: Maximum number of hops between ancestor and descendant.
