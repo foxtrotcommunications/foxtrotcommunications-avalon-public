@@ -11,11 +11,12 @@
 
 ## What's in This Repo
 
-This is the **open source analytics layer** for the Avalon platform. It contains everything needed to build production-grade OMOP CDM 5.4 tables from forge-core's normalized FHIR output, plus a marketplace of analytics packages that run on those tables.
+This is the **open source analytics layer** for the Avalon platform. It contains everything needed to build production-grade OMOP CDM 5.4 tables from forge-core's normalized FHIR output, ECCDM cancer analytics views, plus a marketplace of analytics packages that run on those tables.
 
 | Component | What It Does | Path |
 |-----------|-------------|------|
-| **OMOP dbt Models** | 9 OMOP CDM 5.4 tables built on forge-core `root__` tables | [`omop-views/`](omop-views/) |
+| **OMOP dbt Models** | 17 OMOP CDM 5.4 tables built on forge-core `root__` tables | [`omop-views/models/omop/`](omop-views/models/omop/) |
+| **ECCDM Views** | 6 European Cancer Common Data Model views built on OMOP | [`omop-views/models/eccdm/`](omop-views/models/eccdm/) |
 | **Analytics Packages** | Plug-and-play analytics (HRRP, etc.) with SQL + viz specs | [`packages/`](packages/) |
 | **Forge Table Contract** | Machine-readable schema defining the forge-core → OMOP interface | [`forge-table-contract/`](forge-table-contract/) |
 
@@ -35,11 +36,11 @@ This is the **open source analytics layer** for the Avalon platform. It contains
   └──────────┬───────────┘
              │ root__ tables (per-resource datasets)
              ▼
-  ┌──────────────────────┐
-  │  THIS REPO (OSS)     │  dbt models: staging → OMOP tables
-  │  omop-views/         │  Analytics packages query OMOP tables
-  │  packages/           │
-  └──────────┬───────────┘
+   ┌──────────────────────┐
+   │  THIS REPO (OSS)     │  dbt models: staging → OMOP → ECCDM
+   │  omop-views/         │  Analytics packages query OMOP tables
+   │  packages/           │  ECCDM views for cancer analytics
+   └──────────┬───────────┘
              │ OMOP CDM 5.4 tables
              ▼
   ┌──────────────────────┐
@@ -77,23 +78,46 @@ Browse `packages/` for available analytics. Each package has a `manifest.json` d
 
 ---
 
-## OMOP Models
+## OMOP Models (`models/omop/`)
 
-| Model | OMOP Table | Forge Source Tables |
-|-------|------------|---------------------|
-| `omop_person` | PERSON | `root__root__raw_1`, extension sub-tables |
-| `omop_visit_occurrence` | VISIT_OCCURRENCE | `root__root__raw_1`, class/period/participant |
-| `omop_observation_period` | OBSERVATION_PERIOD | (aggregated from encounters) |
-| `omop_condition_occurrence` | CONDITION_OCCURRENCE | `root__root__raw_1`, code/subject/encounter |
-| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | `root__root__raw_1`, code/perf/subject |
-| `omop_drug_exposure` | DRUG_EXPOSURE | `root__root__raw_1`, medication coding |
-| `omop_measurement` | MEASUREMENT | `root__root__raw_1`, code/value |
-| `omop_observation` | OBSERVATION | `root__root__raw_1`, code/value |
-| `omop_death` | DEATH | patient deceased + same-day conditions |
+| Model | OMOP Table | Description |
+|-------|------------|-------------|
+| `omop_person` | PERSON | One row per patient — demographics, gender, birth year |
+| `omop_location` | LOCATION | Unique city/state/zip combinations |
+| `omop_visit_occurrence` | VISIT_OCCURRENCE | One row per encounter |
+| `omop_observation_period` | OBSERVATION_PERIOD | Observation window per patient |
+| `omop_condition_occurrence` | CONDITION_OCCURRENCE | One row per condition event |
+| `omop_procedure_occurrence` | PROCEDURE_OCCURRENCE | One row per procedure event |
+| `omop_drug_exposure` | DRUG_EXPOSURE | One row per medication event |
+| `omop_measurement` | MEASUREMENT | Numeric observations (labs) |
+| `omop_observation` | OBSERVATION | Non-numeric clinical findings |
+| `omop_death` | DEATH | Deceased patients |
+| `omop_cost` | COST | Claim item-level costs |
+| `omop_payer_plan_period` | PAYER_PLAN_PERIOD | Coverage periods per patient+insurer |
+| `omop_provider` | PROVIDER | Derived from encounter participants |
+| `omop_care_site` | CARE_SITE | Derived from encounter service providers |
+| `omop_cdm_source` | CDM_SOURCE | Required OMOP metadata row |
+| `omop_condition_era` | CONDITION_ERA | Condition persistence windows (30-day) |
+| `omop_drug_era` | DRUG_ERA | Drug persistence windows (30-day) |
 
-All models pull data exclusively from forge-core's child sub-tables (`root__root__raw_1` and descendants). `root__root` is used only as the ingestion anchor for deduplication.
+All models pull data exclusively from forge-core's child sub-tables (`root__root__raw_1` and descendants). For full specifications, see [docs/omop_view_specs.md](docs/omop_view_specs.md).
 
-For full specifications, see [docs/omop_view_specs.md](docs/omop_view_specs.md).
+---
+
+## ECCDM Views (`models/eccdm/`)
+
+Implementation of the [European Cancer Common Data Model](https://build.fhir.org/ig/hl7-eu/cancer-common/conceptualmodel.html) (HL7 EU Cancer Common IG). All 6 views are materialized as views with `ref()` dependencies on upstream OMOP tables.
+
+| Model | ECCDM Entity | Depends On |
+|-------|-------------|------------|
+| `eccdm_cancer_patient` | CancerPatient | omop_person, omop_observation_period, omop_condition_occurrence, omop_death |
+| `eccdm_cancer_condition` | CancerConditionAtDiagnosis | omop_condition_occurrence, omop_person |
+| `eccdm_cancer_stage` | CancerStage (TNM) | omop_measurement |
+| `eccdm_cancer_treatment` | CancerTreatment | omop_procedure_occurrence, omop_drug_exposure, eccdm_cancer_patient |
+| `eccdm_treatment_response` | TreatmentResponse | omop_measurement, eccdm_cancer_patient |
+| `eccdm_follow_up` | LastFollowUp | omop_visit_occurrence, eccdm_cancer_patient, eccdm_cancer_condition, eccdm_cancer_treatment |
+
+Filters cancer patients by ICD-10 C00–C97 codes (excluding C44 non-melanoma skin cancer). Includes TNM staging (clinical + pathological), treatment categorization (surgery, radiotherapy, systemic), tumor marker tracking (PSA, CEA, CA-125, CA-19-9), and follow-up with vital status.
 
 ---
 
@@ -117,14 +141,23 @@ avalon-public/
 │   ├── dbt_project.yml               # Config with forge dataset vars
 │   ├── macros/forge_join.sql          # Reusable idx segment matching
 │   └── models/
-│       ├── staging/                   # Views joining root__ sub-tables
+│       ├── staging/                   # FHIR → flat views
 │       │   ├── _sources.yml           # Source definitions
+│       │   ├── _vocab_sources.yml     # Vocabulary source definitions
+│       │   ├── schema.yml             # Staging model tests
 │       │   ├── stg_patient.sql
 │       │   ├── stg_encounter.sql
 │       │   └── ...
-│       ├── omop_person.sql            # Materialized OMOP tables
-│       ├── omop_visit_occurrence.sql
-│       └── ...
+│       ├── omop/                      # OMOP CDM 5.4 tables (17 models)
+│       │   ├── schema.yml             # OMOP model tests
+│       │   ├── omop_person.sql
+│       │   ├── omop_visit_occurrence.sql
+│       │   └── ...
+│       └── eccdm/                     # ECCDM cancer views (6 models)
+│           ├── schema.yml             # ECCDM model tests
+│           ├── eccdm_cancer_patient.sql
+│           ├── eccdm_cancer_condition.sql
+│           └── ...
 ├── packages/                          # Analytics marketplace
 │   └── hrrp-readmission-penalty/
 │       ├── manifest.json
