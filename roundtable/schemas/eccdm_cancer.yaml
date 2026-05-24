@@ -1,0 +1,230 @@
+# ECCDM (European Cancer Common Data Model) Schema Map — BigQuery Deployment
+# Dataset: foxtrot-communications-public.forge_synthetic_fhir
+# Source: avalon-public/omop-views/models/eccdm/ (dbt views)
+# Purpose: Upload to Roundtable workspace so the AI can query cancer-specific analytics
+#
+# All ECCDM views are materialized as BigQuery views on top of OMOP CDM 5.4 tables.
+# They filter for cancer patients using ICD-10 C00–C97 (excluding C44 non-melanoma skin cancer).
+# Reference: https://build.fhir.org/ig/hl7-eu/cancer-common/conceptualmodel.html
+
+dataset:
+  project: foxtrot-communications-public
+  dataset: forge_synthetic_fhir
+  source: "ECCDM views built on OMOP CDM 5.4 via dbt"
+  standard: "HL7 EU Cancer Common IG (ECCDM)"
+  cancer_filter: >
+    All views restrict to patients with at least one ICD-10 C-code condition
+    (condition_source_value LIKE 'C%' AND NOT LIKE 'C44%').
+    C44 (non-melanoma skin cancer) is excluded per ECCDM convention.
+  important: >
+    ECCDM views depend on the OMOP tables in the same dataset. Always join
+    back to omop_person or eccdm_cancer_patient for demographics.
+    For concept name resolution, join concept IDs to omop_vocab.concept.
+
+tables:
+
+  # ─── Cancer Patient Cohort ─────────────────────────────
+
+  - name: eccdm_cancer_patient
+    description: >
+      One row per cancer patient. Filters omop_person to only patients with
+      at least one ICD-10 C00–C97 diagnosis (excluding C44). Adds observation
+      period dates, death status, and computed date_of_birth.
+    primary_key: person_id
+    depends_on: [omop_person, omop_observation_period, omop_death, omop_condition_occurrence]
+    columns:
+      - { name: person_id, type: INT64, fk: omop_person.person_id }
+      - { name: gender_concept_id, type: INT64, description: "8507=Male, 8532=Female" }
+      - { name: year_of_birth, type: INT64 }
+      - { name: month_of_birth, type: INT64 }
+      - { name: day_of_birth, type: INT64 }
+      - { name: date_of_birth, type: DATE, description: "Computed: DATE(year, COALESCE(month,1), COALESCE(day,1))" }
+      - { name: race_concept_id, type: INT64 }
+      - { name: race_source_value, type: STRING }
+      - { name: ethnicity_concept_id, type: INT64 }
+      - { name: ethnicity_source_value, type: STRING }
+      - { name: person_source_value, type: STRING, description: "Original FHIR Patient.id" }
+      - { name: first_observation_date, type: DATE, description: "From omop_observation_period.observation_period_start_date" }
+      - { name: last_observation_date, type: DATE, description: "From omop_observation_period.observation_period_end_date" }
+      - { name: death_date, type: DATE, description: "From omop_death; NULL if alive" }
+      - { name: is_deceased, type: BOOL, description: "TRUE if death_date is not null" }
+
+  # ─── Cancer Diagnosis ──────────────────────────────────
+
+  - name: eccdm_cancer_condition
+    description: >
+      Cancer diagnoses from omop_condition_occurrence filtered to ICD-10 C00–C97
+      (excluding C44). One row per diagnosis event. Includes computed age_at_diagnosis.
+    primary_key: condition_occurrence_id
+    depends_on: [omop_condition_occurrence, omop_person]
+    columns:
+      - { name: condition_occurrence_id, type: INT64 }
+      - { name: person_id, type: INT64, fk: eccdm_cancer_patient.person_id }
+      - { name: condition_concept_id, type: INT64, description: "SNOMED standard concept for the condition" }
+      - { name: icd10_code, type: STRING, description: "ICD-10 code (aliased from condition_source_value)" }
+      - { name: diagnosis_date, type: DATE, description: "Aliased from condition_start_date" }
+      - { name: diagnosis_datetime, type: TIMESTAMP, description: "Aliased from condition_start_datetime" }
+      - { name: condition_end_date, type: DATE }
+      - { name: condition_end_datetime, type: TIMESTAMP }
+      - { name: condition_type_concept_id, type: INT64 }
+      - { name: condition_status_concept_id, type: INT64 }
+      - { name: condition_status_source_value, type: STRING }
+      - { name: condition_source_concept_id, type: INT64 }
+      - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
+      - { name: age_at_diagnosis, type: INT64, description: "Years between birth and diagnosis date" }
+
+  # ─── TNM Cancer Staging ────────────────────────────────
+
+  - name: eccdm_cancer_stage
+    description: >
+      TNM staging assessments from omop_measurement filtered to specific LOINC codes.
+      Includes clinical and pathological staging for T, N, M components and stage group.
+    primary_key: measurement_id
+    depends_on: [omop_measurement]
+    loinc_codes:
+      clinical_stage_group: "21908-9"
+      pathological_stage_group: "21902-2"
+      clinical_T: "21905-5"
+      pathological_T: "21899-0"
+      clinical_N: "21906-3"
+      pathological_N: "21900-6"
+      clinical_M: "21907-1"
+      pathological_M: "21901-4"
+    columns:
+      - { name: measurement_id, type: INT64 }
+      - { name: person_id, type: INT64 }
+      - { name: measurement_concept_id, type: INT64 }
+      - { name: loinc_code, type: STRING, description: "LOINC code for the staging assessment" }
+      - { name: value_as_number, type: FLOAT64 }
+      - { name: value_as_concept_id, type: INT64 }
+      - { name: stage_value, type: STRING, description: "Stage value text (e.g., 'T2', 'N1', 'Stage IIA')" }
+      - { name: staging_date, type: DATE }
+      - { name: staging_datetime, type: TIMESTAMP }
+      - { name: measurement_source_concept_id, type: INT64 }
+      - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: staging_type, type: STRING, description: "'clinical' or 'pathological' or 'unknown'" }
+      - { name: tnm_component, type: STRING, description: "'stage_group', 'T', 'N', 'M', or 'other'" }
+
+  # ─── Cancer Treatment ──────────────────────────────────
+
+  - name: eccdm_cancer_treatment
+    description: >
+      Cancer treatments for cancer patients. UNION ALL of three categories:
+      surgery (keyword match on procedure_source_value), radiotherapy (keyword match),
+      and systemic therapy (keyword match on drug_source_value for 15 common agents).
+      Only includes treatments for patients in eccdm_cancer_patient.
+    depends_on: [omop_procedure_occurrence, omop_drug_exposure, eccdm_cancer_patient]
+    treatment_categories:
+      surgery: "Procedures matching: ectomy, excision, resection, biopsy"
+      radiotherapy: "Procedures matching: radiation, radiotherapy, brachytherapy"
+      systemic: >
+        Drug exposures matching: cisplatin, carboplatin, doxorubicin, paclitaxel,
+        fluorouracil, cyclophosphamide, tamoxifen, pembrolizumab, nivolumab,
+        trastuzumab, bevacizumab, methotrexate, gemcitabine, irinotecan, oxaliplatin
+    columns:
+      - { name: treatment_id, type: INT64, description: "procedure_occurrence_id or drug_exposure_id depending on source" }
+      - { name: source_table, type: STRING, description: "'procedure_occurrence' or 'drug_exposure'" }
+      - { name: person_id, type: INT64, fk: eccdm_cancer_patient.person_id }
+      - { name: treatment_concept_id, type: INT64, description: "procedure_concept_id or drug_concept_id" }
+      - { name: treatment_code, type: STRING, description: "procedure_source_value or drug_source_value" }
+      - { name: treatment_category, type: STRING, description: "'surgery', 'radiotherapy', or 'systemic'" }
+      - { name: treatment_start_date, type: DATE }
+      - { name: treatment_end_date, type: DATE, description: "NULL for procedures; drug_exposure_end_date for systemic" }
+      - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: provider_id, type: INT64, fk: omop_provider.provider_id }
+
+  # ─── Treatment Response (Tumor Markers) ────────────────
+
+  - name: eccdm_treatment_response
+    description: >
+      Tumor marker measurements for cancer patients. Tracks PSA, CEA, CA-125,
+      and CA-19-9 values over time from omop_measurement. Only includes
+      measurements for patients in eccdm_cancer_patient.
+    primary_key: measurement_id
+    depends_on: [omop_measurement, eccdm_cancer_patient]
+    marker_loinc_codes:
+      PSA: "2857-1"
+      CEA: "2039-6"
+      CA-125: "10334-1"
+      CA-19-9: "24108-3"
+    columns:
+      - { name: measurement_id, type: INT64 }
+      - { name: person_id, type: INT64, fk: eccdm_cancer_patient.person_id }
+      - { name: measurement_concept_id, type: INT64 }
+      - { name: loinc_code, type: STRING, description: "LOINC code for the tumor marker" }
+      - { name: numeric_value, type: FLOAT64, description: "Measured value (e.g., PSA ng/mL)" }
+      - { name: unit, type: STRING, description: "Unit of measurement" }
+      - { name: value_as_concept_id, type: INT64 }
+      - { name: coded_value, type: STRING, description: "Text representation of value" }
+      - { name: assessment_date, type: DATE }
+      - { name: assessment_datetime, type: TIMESTAMP }
+      - { name: visit_occurrence_id, type: INT64, fk: omop_visit_occurrence.visit_occurrence_id }
+      - { name: response_marker_type, type: STRING, description: "'PSA', 'CEA', 'CA-125', 'CA-19-9', or 'other_marker'" }
+
+  # ─── Follow-Up / Vital Status ──────────────────────────
+
+  - name: eccdm_follow_up
+    description: >
+      Most recent visit per cancer patient. One row per patient with vital status,
+      days since initial diagnosis, and days since last treatment. Uses ROW_NUMBER()
+      to pick the latest visit_start_date per patient.
+    primary_key: person_id
+    depends_on: [omop_visit_occurrence, eccdm_cancer_patient, eccdm_cancer_condition, eccdm_cancer_treatment]
+    columns:
+      - { name: person_id, type: INT64, fk: eccdm_cancer_patient.person_id }
+      - { name: last_visit_id, type: INT64, description: "visit_occurrence_id of the most recent visit" }
+      - { name: follow_up_date, type: DATE, description: "Date of the most recent visit" }
+      - { name: visit_concept_id, type: INT64, description: "Type of the last visit (9201=IP, 9202=OP, etc.)" }
+      - { name: vital_status, type: STRING, description: "'alive' or 'deceased'" }
+      - { name: death_date, type: DATE, description: "NULL if alive" }
+      - { name: last_known_date, type: DATE, description: "Last observation date from eccdm_cancer_patient" }
+      - { name: days_since_diagnosis, type: INT64, description: "Days between first cancer diagnosis and last visit" }
+      - { name: days_since_last_treatment, type: INT64, description: "Days between last treatment and last visit; NULL if no treatment" }
+
+# ─── Query Patterns ────────────────────────────────────
+#
+# Count cancer patients by ICD-10 code:
+#   SELECT icd10_code, COUNT(DISTINCT person_id) AS patient_count
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_condition`
+#   GROUP BY icd10_code
+#   ORDER BY patient_count DESC
+#
+# Cancer patients with staging:
+#   SELECT cp.person_id, cp.date_of_birth, cc.icd10_code, cs.staging_type, cs.tnm_component, cs.stage_value
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_patient` cp
+#   JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_condition` cc
+#     ON cp.person_id = cc.person_id
+#   LEFT JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_stage` cs
+#     ON cp.person_id = cs.person_id
+#
+# Treatment breakdown by category:
+#   SELECT treatment_category, COUNT(*) AS treatment_count, COUNT(DISTINCT person_id) AS patient_count
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_treatment`
+#   GROUP BY treatment_category
+#
+# Tumor marker trends (e.g., PSA over time for a patient):
+#   SELECT person_id, assessment_date, numeric_value, unit, response_marker_type
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_treatment_response`
+#   WHERE response_marker_type = 'PSA'
+#   ORDER BY person_id, assessment_date
+#
+# Survival analysis — days since diagnosis with vital status:
+#   SELECT fu.person_id, fu.vital_status, fu.days_since_diagnosis, fu.days_since_last_treatment,
+#          cc.icd10_code, cc.age_at_diagnosis
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_follow_up` fu
+#   JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_condition` cc
+#     ON fu.person_id = cc.person_id
+#
+# Full cancer patient profile:
+#   SELECT cp.person_id, cp.date_of_birth, cp.is_deceased, cp.death_date,
+#          cc.icd10_code, cc.diagnosis_date, cc.age_at_diagnosis,
+#          ct.treatment_category, ct.treatment_start_date,
+#          fu.vital_status, fu.days_since_diagnosis
+#   FROM `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_patient` cp
+#   LEFT JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_condition` cc
+#     ON cp.person_id = cc.person_id
+#   LEFT JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_cancer_treatment` ct
+#     ON cp.person_id = ct.person_id
+#   LEFT JOIN `foxtrot-communications-public.forge_synthetic_fhir.eccdm_follow_up` fu
+#     ON cp.person_id = fu.person_id
