@@ -11,12 +11,12 @@ SELECT
   JSON_VALUE(raw_json, '$.code.coding[0].display') AS vital_name,
   SAFE_CAST(JSON_VALUE(raw_json, '$.valueQuantity.value') AS FLOAT64) AS value,
   JSON_VALUE(raw_json, '$.valueQuantity.unit') AS unit,
-  CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP) AS recorded_time,
+  SAFE_CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP) AS recorded_time,
   -- Blood pressure panels have component values
   SAFE_CAST(JSON_VALUE(raw_json, '$.component[0].valueQuantity.value') AS FLOAT64) AS systolic,
   SAFE_CAST(JSON_VALUE(raw_json, '$.component[1].valueQuantity.value') AS FLOAT64) AS diastolic,
   _ingested_date
 FROM {{ source('bellows_staging', 'raw_observation') }}
 WHERE JSON_VALUE(raw_json, '$.category[0].coding[0].code') = 'vital-signs'
-  AND CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS DATE)
-      >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+  AND SAFE_CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP)
+      >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)

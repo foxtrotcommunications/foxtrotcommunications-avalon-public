@@ -13,7 +13,7 @@ SELECT
   SAFE_CAST(JSON_VALUE(raw_json, '$.valueQuantity.value') AS FLOAT64) AS result_value,
   JSON_VALUE(raw_json, '$.valueQuantity.unit') AS result_unit,
   JSON_VALUE(raw_json, '$.valueString') AS result_string,
-  CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP) AS result_time,
+  SAFE_CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP) AS result_time,
   JSON_VALUE(raw_json, '$.status') AS status,
   JSON_VALUE(raw_json, '$.category[0].coding[0].code') AS category,
   -- Critical value flags based on clinical thresholds
@@ -44,5 +44,5 @@ SELECT
   _ingested_date
 FROM {{ source('bellows_staging', 'raw_observation') }}
 WHERE JSON_VALUE(raw_json, '$.category[0].coding[0].code') = 'laboratory'
-  AND CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS DATE)
-      >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
+  AND SAFE_CAST(JSON_VALUE(raw_json, '$.effectiveDateTime') AS TIMESTAMP)
+      >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 48 HOUR)

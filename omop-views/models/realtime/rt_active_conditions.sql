@@ -14,8 +14,8 @@ SELECT
   JSON_VALUE(raw_json, '$.clinicalStatus.coding[0].code') AS clinical_status,
   JSON_VALUE(raw_json, '$.verificationStatus.coding[0].code') AS verification_status,
   JSON_VALUE(raw_json, '$.category[0].coding[0].code') AS category,
-  CAST(JSON_VALUE(raw_json, '$.onsetDateTime') AS TIMESTAMP) AS onset_date,
-  CAST(JSON_VALUE(raw_json, '$.recordedDate') AS TIMESTAMP) AS recorded_date,
+  SAFE_CAST(JSON_VALUE(raw_json, '$.onsetDateTime') AS TIMESTAMP) AS onset_date,
+  SAFE_CAST(JSON_VALUE(raw_json, '$.recordedDate') AS TIMESTAMP) AS recorded_date,
   _ingested_date
 FROM {{ source('bellows_staging', 'raw_condition') }}
 WHERE JSON_VALUE(raw_json, '$.clinicalStatus.coding[0].code') = 'active'

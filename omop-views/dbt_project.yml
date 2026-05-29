@@ -26,6 +26,9 @@ vars:
   # Vocabulary resolution — set to true after loading Athena vocab (via load_vocab.py or Analytics Hub)
   vocab_loaded: true
 
+  # Bellows staging project (raw FHIR staging tables)
+  bellows_project: "foxtrot-communications-public"
+
   # Per-resource normalized datasets produced by forge-core
   forge_patient_dataset: "fhir_normalized_patient"
   forge_encounter_dataset: "fhir_normalized_encounter"

@@ -2,8 +2,8 @@ version: 2
 
 sources:
   - name: bellows_staging
-    database: "{{ var('forge_project') }}"
-    schema: bellows_fhir_staging
+    database: "{{ var('bellows_project') }}"
+    schema: avalon_fhir_staging
     description: >
       Raw FHIR R4 staging tables from Bellows/Synthea pipeline.
       Clinical data must be extracted from the raw_json column only.

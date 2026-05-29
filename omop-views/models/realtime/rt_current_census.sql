@@ -30,10 +30,10 @@ patients AS (
     resource_id AS patient_id,
     JSON_VALUE(raw_json, '$.name[0].given[0]') AS first_name,
     JSON_VALUE(raw_json, '$.name[0].family') AS last_name,
-    CAST(JSON_VALUE(raw_json, '$.birthDate') AS DATE) AS birth_date,
+    SAFE_CAST(LEFT(JSON_VALUE(raw_json, '$.birthDate'), 10) AS DATE) AS birth_date,
     DATE_DIFF(
       CURRENT_DATE(),
-      CAST(JSON_VALUE(raw_json, '$.birthDate') AS DATE),
+      SAFE_CAST(LEFT(JSON_VALUE(raw_json, '$.birthDate'), 10) AS DATE),
       YEAR
     ) AS age,
     JSON_VALUE(raw_json, '$.gender') AS gender
