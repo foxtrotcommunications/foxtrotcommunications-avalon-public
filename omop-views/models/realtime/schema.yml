@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: rt_current_census
+  - name: current_census
     description: >
       Current inpatient census — who is in the hospital right now.
       Joins encounters (in-progress, inpatient) with patient demographics.
@@ -16,7 +16,7 @@ models:
       - name: los_days
         description: Length of stay in days from admit to today
 
-  - name: rt_active_medications
+  - name: active_medications
     description: >
       Active medication orders for current inpatients.
       All medication details extracted from raw_json.
@@ -27,7 +27,7 @@ models:
       - name: medication_name
         description: Display name of the medication
 
-  - name: rt_recent_labs
+  - name: recent_labs
     description: >
       Laboratory results from the last 48 hours with critical value flagging.
       All values extracted from raw_json.
@@ -38,7 +38,7 @@ models:
       - name: critical_flag
         description: "NORMAL, CRITICAL_LOW, or CRITICAL_HIGH"
 
-  - name: rt_recent_vitals
+  - name: recent_vitals
     description: >
       Vital signs from the last 24 hours.
       Includes blood pressure component extraction.
@@ -47,7 +47,7 @@ models:
         description: FHIR Observation resource ID
         tests: [not_null]
 
-  - name: rt_active_conditions
+  - name: active_conditions
     description: >
       Active diagnoses for current inpatients.
       SNOMED-coded conditions with clinical status.
