@@ -137,6 +137,9 @@ models:
     +materialized: table
     staging:
       +materialized: view
+    realtime:
+      +materialized: view
+      +schema: avalon_edge
 
 seeds:
   avalon_omop: {}

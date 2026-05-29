@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: rt_current_census
+    description: >
+      Current inpatient census — who is in the hospital right now.
+      Joins encounters (in-progress, inpatient) with patient demographics.
+      All clinical data extracted from raw_json.
+    columns:
+      - name: encounter_id
+        description: FHIR Encounter resource ID
+        tests: [not_null]
+      - name: patient_id
+        description: FHIR Patient resource ID
+        tests: [not_null]
+      - name: los_days
+        description: Length of stay in days from admit to today
+
+  - name: rt_active_medications
+    description: >
+      Active medication orders for current inpatients.
+      All medication details extracted from raw_json.
+    columns:
+      - name: medication_request_id
+        description: FHIR MedicationRequest resource ID
+        tests: [not_null]
+      - name: medication_name
+        description: Display name of the medication
+
+  - name: rt_recent_labs
+    description: >
+      Laboratory results from the last 48 hours with critical value flagging.
+      All values extracted from raw_json.
+    columns:
+      - name: observation_id
+        description: FHIR Observation resource ID
+        tests: [not_null]
+      - name: critical_flag
+        description: "NORMAL, CRITICAL_LOW, or CRITICAL_HIGH"
+
+  - name: rt_recent_vitals
+    description: >
+      Vital signs from the last 24 hours.
+      Includes blood pressure component extraction.
+    columns:
+      - name: observation_id
+        description: FHIR Observation resource ID
+        tests: [not_null]
+
+  - name: rt_active_conditions
+    description: >
+      Active diagnoses for current inpatients.
+      SNOMED-coded conditions with clinical status.
+    columns:
+      - name: condition_id
+        description: FHIR Condition resource ID
+        tests: [not_null]

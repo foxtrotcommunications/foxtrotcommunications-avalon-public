@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: bellows_staging
+    database: "{{ var('forge_project') }}"
+    schema: bellows_fhir_staging
+    description: >
+      Raw FHIR R4 staging tables from Bellows/Synthea pipeline.
+      Clinical data must be extracted from the raw_json column only.
+      Top-level columns are pipeline metadata.
+    tables:
+      - name: raw_patient
+        description: Patient demographics (FHIR Patient resource)
+      - name: raw_encounter
+        description: Clinical encounters (FHIR Encounter resource)
+      - name: raw_condition
+        description: Diagnoses and problems (FHIR Condition resource)
+      - name: raw_observation
+        description: Labs, vitals, and other observations (FHIR Observation resource)
+      - name: raw_medicationrequest
+        description: Medication orders (FHIR MedicationRequest resource)
+      - name: raw_procedure
+        description: Procedures performed (FHIR Procedure resource)
